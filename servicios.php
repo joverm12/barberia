@@ -1,17 +1,30 @@
 <?php
+/**
+ * ARCHIVO: servicios.php
+ * DESCRIPCIÓN: 
+ * Este módulo actúa como el catálogo público de Barber House. Evalúa dinámicamente 
+ * el estado de la sesión para adecuar el menú superior y realiza una consulta relacional 
+ * anidada: primero extrae los paquetes globales (Packs) y luego, por cada paquete, 
+ * filtra de forma limpia los servicios vinculados. Estructura el diseño mediante bloques 
+ * asimétricos alternos e incluye un motor de búsqueda rápida en el front-end.
+ */
+
+// Iniciamos la sesión para comprobar el estado del visitante en la app
 session_start();
+// Importamos el puente de conexión centralizada
 require_once 'conexion.php';
 
-// Evaluar si el usuario inició sesión
+// Evaluar si el usuario inició sesión para moldear las opciones del navbar
 $sesion_activa = isset($_SESSION['user_id']);
 $rol_usuario   = $sesion_activa ? $_SESSION['user_rol'] : '';
 $nombre_usuario = $sesion_activa ? $_SESSION['user_name'] : '';
 
-// 1. Obtener todos los paquetes (Packs) disponibles
+// 1. Obtener todos los paquetes (Packs) disponibles de forma ascendente
 try {
     $stmtPacks = $pdo->query("SELECT * FROM pack ORDER BY id_pack ASC");
     $packs = $stmtPacks->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
+    // Si la base de datos falla, inicializamos en vacío para evitar rupturas de sintaxis
     $packs = [];
 }
 ?>
@@ -26,10 +39,11 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     
     <style>
+        /* Ajustes maestros de normalización visual */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #FCF6ED; font-family: 'Instrument Sans', sans-serif; color: #29030E; overflow-x: hidden; }
 
-        /* --- NAVBAR SUPERIOR --- */
+        /* --- NAVBAR SUPERIOR CONFIGURADA --- */
         .navbar {
             background-color: #52131E;
             width: 100%;
@@ -47,7 +61,7 @@ try {
         .nav-links a { color: #FFEED5; text-decoration: none; font-size: 18px; font-weight: 400; transition: color 0.3s; }
         .nav-links a:hover { color: #EDC484; }
 
-        /* --- MENÚ DESPLEGABLE (DROPDOWN) --- */
+        /* --- MENÚ DESPLEGABLE (DROPDOWN DE NAVEGACIÓN) --- */
         .nav-user-zone { display: flex; align-items: center; gap: 20px; }
         .user-dropdown-container { position: relative; display: inline-block; }
         .user-dropdown-btn {
@@ -63,7 +77,7 @@ try {
         .dropdown-menu a { color: #FFEED5; padding: 14px 16px; text-decoration: none; font-size: 14px; transition: background 0.3s; text-align: left; }
         .dropdown-menu a:hover { background-color: #52131E; color: #EDC484; }
 
-        /* --- HERO BANNER --- */
+        /* --- HERO BANNER DE INVITACIÓN --- */
         .hero-banner {
             width: 100%;
             max-width: 1440px;
@@ -81,6 +95,7 @@ try {
         }
         .hero-banner p { letter-spacing: 3px; font-size: 14px; margin-bottom: 10px; font-weight: 500; color: #EDC484; }
         .hero-banner h1 { font-family: 'Sawarabi Mincho', serif; font-size: 48px; color: #FFFFFF; font-weight: 400; margin-bottom: 25px; letter-spacing: 1px; }
+        
         .btn-reserve { 
             background-color: #52131E; border: 2px solid #EDC484; color: #EDC484; padding: 14px 35px; 
             font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; text-decoration: none; 
@@ -88,12 +103,12 @@ try {
         }
         .btn-reserve:hover { background-color: #EDC484; color: #29030E; }
 
-        /* --- CABECERA --- */
+        /* --- CABECERA DE SECCIÓN --- */
         .catalog-header { text-align: center; padding: 60px 20px 30px; max-width: 800px; margin: 0 auto; }
         .catalog-header h2 { font-family: 'Sawarabi Mincho', serif; font-size: 38px; color: #29030E; margin-bottom: 12px; }
         .catalog-header p { font-size: 16px; color: #52131E; opacity: 0.8; line-height: 1.5; }
 
-        /* --- BUSCADOR --- */
+        /* --- BARRA DE BÚSQUEDA --- */
         .search-container { width: 991px; max-width: 90%; margin: 0 auto 50px; position: relative; }
         .search-input { 
             width: 100%; height: 55px; border: 1px solid #52131E; border-radius: 30px; 
@@ -101,14 +116,17 @@ try {
             box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
         }
 
-        /* --- BLOQUES ASIMÉTRICOS DE FIGMA --- */
+        /* --- LAYOUT DE BLOQUES ASIMÉTRICOS (DISEÑO FIEL A FIGMA) --- */
         .category-block { width: 100%; max-width: 1440px; margin: 0 auto 60px; display: flex; min-height: 520px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        
+        /* Modificador para invertir las posiciones de imagen e información de manera fluida */
         .category-block.reverse { flex-direction: row-reverse; }
         .block-img { width: 50%; background-size: cover; background-position: center; min-height: 520px; }
+        
         .block-info { width: 50%; background-color: #52131E; color: #FFEED5; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
         .block-info h3 { font-family: 'Sawarabi Mincho', serif; font-size: 34px; color: #EDC484; margin-bottom: 35px; border-bottom: 2px solid rgba(237,196,132,0.2); padding-bottom: 15px; font-style: italic; }
         
-        /* ELEMENTOS DEL MENÚ */
+        /* FILAS E ÍTEMS DEL MENÚ DE TARIFAS */
         .menu-item { display: flex; justify-content: space-between; margin-bottom: 30px; align-items: flex-start; }
         .item-detail { width: 80%; }
         .item-detail h4 { font-size: 19px; color: #FFFFFF; font-weight: 500; }
@@ -171,22 +189,24 @@ try {
         $id_pack = $p['id_pack'];
         $nombre_pack = $p['nombre']; 
         
-        // 2. Filtrar de forma limpia los servicios correspondientes a este id_pack específico
+        // 2. Extraemos mediante sentencias preparadas los servicios vinculados estrictamente a este id_pack
         $stmtServ = $pdo->prepare("SELECT * FROM servicio WHERE id_pack = ? ORDER BY id_servicio ASC");
         $stmtServ->execute([$id_pack]);
         $servicios_del_pack = $stmtServ->fetchAll(PDO::FETCH_ASSOC);
         
-        // Solo renderizamos el bloque de Figma si el paquete tiene servicios cargados
+        // Evaluamos de manera preventiva: Solo pintamos el bloque si el Pack cuenta con servicios cargados
         if (count($servicios_del_pack) > 0):
             $contador_bloques++;
-            // Alternar orientación de la imagen (Izquierda / Derecha) como en tu diseño original
+            
+            // Alternamos dinámicamente la clase reverse para lograr el efecto asimétrico del diseño original
             $clase_reverse = ($contador_bloques % 2 === 0) ? 'reverse' : '';
             
-            // Puedes cambiar esta ruta por imágenes diferentes según el bloque
+            // Variable configurable para setear imágenes de portada por bloque en el futuro
             $imagen_bloque = 'imagenes/sobre_nosotros.jpg'; 
     ?>
         <div class="category-block <?php echo $clase_reverse; ?>">
             <div class="block-img" style="background-image: url('<?php echo $imagen_bloque; ?>');"></div>
+            
             <div class="block-info" style="<?php echo ($contador_bloques % 2 === 0) ? 'background-color: #420516;' : ''; ?>">
                 <h3><?php echo htmlspecialchars($nombre_pack); ?></h3>
                 
@@ -217,7 +237,7 @@ try {
     </footer>
 
     <script>
-        // Control del menú desplegable del Navbar
+        // Control y apertura del Dropdown de sesión
         const dropdownBtn = document.getElementById('dropdownBtn');
         const dropdownMenu = document.getElementById('dropdownMenu');
         if (dropdownBtn && dropdownMenu) {
@@ -230,12 +250,16 @@ try {
             });
         }
 
-        // Buscador predictivo en tiempo real
+        // Buscador predictivo en tiempo real en el Front-end
         document.getElementById('catalogSearch').addEventListener('input', function(e) {
             let filter = e.target.value.toLowerCase();
             let items = document.querySelectorAll('.menu-item');
+            
             items.forEach(function(item) {
+                // Comparamos el texto del input con el título (H4) de cada fila de servicio
                 let text = item.querySelector('h4').innerText.toLowerCase();
+                
+                // Si el texto coincide, conservamos el 'flex', de lo contrario ocultamos la fila
                 item.style.display = text.includes(filter) ? "flex" : "none";
             });
         });
