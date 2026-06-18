@@ -1,13 +1,25 @@
 <?php
+/**
+ * ARCHIVO: inicio.php
+ * DESCRIPCIÓN: 
+ * Este archivo representa la página de inicio o Landing Page principal de Barber House. 
+ * Su objetivo es dar la bienvenida tanto a usuarios anónimos como autenticados. 
+ * Evalúa dinámicamente el estado de la sesión para adaptar las opciones del menú superior, 
+ * renderiza secciones estéticas de servicios destacados e incluye un módulo adaptativo 
+ * para simular e inyectar reseñas reales basadas en el prototipo de Figma.
+ */
+
+// Iniciamos la sesión para comprobar si el visitante es un usuario activo del sistema
 session_start();
+// Importamos la conexión por si se requiere realizar consultas directas al catálogo
 require_once 'conexion.php';
 
-// Evaluamos si el usuario ya está logeado y qué rol tiene
+// Evaluamos si el usuario ya está logeado y qué rol tiene asignado
 $sesion_activa = isset($_SESSION['user_id']);
 $rol_usuario   = $sesion_activa ? $_SESSION['user_rol'] : '';
 $nombre_usuario = $sesion_activa ? $_SESSION['user_name'] : '';
 
-// Simulación de las reseñas basadas en tu Figma para que la vista renderice perfecto
+// Simulación de las reseñas basadas en la interfaz de Figma para que la vista renderice con datos reales
 $comentarios = [
     ['nombre' => 'JOVER MOREIRA', 'texto' => 'Increible servicio. Muy buena atención. Recomendadisimo!!!', 'tiempo' => 'hace 2 horas'],
     ['nombre' => 'DARWIN MERO', 'texto' => 'Exelentes trabajos. Volvere pronto!', 'tiempo' => 'hace 15 min']
@@ -24,10 +36,11 @@ $comentarios = [
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     
     <style>
+        /* Estilos base y reseteo */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #FCF6ED; font-family: 'Instrument Sans', sans-serif; color: #FFEED5; overflow-x: hidden; }
 
-        /* --- NAVBAR SUPERIOR --- */
+        /* Estructura del Navbar Superior adaptable */
         .navbar {
             background-color: #52131E;
             width: 100%;
@@ -45,7 +58,7 @@ $comentarios = [
         .nav-links a { color: #FFEED5; text-decoration: none; font-size: 18px; font-weight: 400; transition: color 0.3s; }
         .nav-links a:hover { color: #EDC484; }
 
-        /* --- ZONA DE USUARIO Y DROPDOWN CORREGIDO --- */
+        /* Controles del Menú Desplegable (Dropdown de Perfil) */
         .nav-user-zone { 
             display: flex; 
             align-items: center; 
@@ -64,11 +77,11 @@ $comentarios = [
             position: absolute; top: 125%; right: 0; background-color: #231918; border: 1px solid #EDC484;
             border-radius: 12px; width: 200px; box-shadow: 0px 8px 24px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden; z-index: 999;
         }
-        .dropdown-menu.show { display: flex; }
+        .dropdown-menu.show { display: flex; } /* Clase de apoyo controlada por JavaScript */
         .dropdown-menu a { color: #FFEED5; padding: 14px 16px; text-decoration: none; font-size: 14px; transition: background 0.3s; text-align: left; }
         .dropdown-menu a:hover { background-color: #52131E; color: #EDC484; }
 
-        /* --- HERO SECCIÓN (IMAGEN DE FONDO + DEGRADADO) --- */
+        /* Banner de Impacto (Sección Hero con imagen de fondo y superposición) */
         .hero-section {
             width: 100%;
             max-width: 1440px;
@@ -79,8 +92,6 @@ $comentarios = [
             background-repeat: no-repeat;
             position: relative;
         }
-
-        /* --- HERO TEXT --- */
         .hero-content { 
             text-align: center; 
             padding: 130px 20px; 
@@ -88,14 +99,14 @@ $comentarios = [
         .hero-content h2 { font-family: 'Sawarabi Mincho', serif; font-size: 56px; color: #FFFFFF; font-weight: 400; letter-spacing: 2px; margin-bottom: 10px; }
         .hero-content p { font-size: 24px; color: #EDC484; font-style: italic; }
 
-        /* --- SECCIÓN SOBRE NOSOTROS --- */
+        /* Bloques Corporativos e Identidad (Misión y Visión) */
         .about-section { background-color: #29030E; padding: 60px 50px; display: flex; justify-content: center; gap: 50px; align-items: center; border-top: 4px solid #EDC484; }
         .about-img { width: 523px; height: 515px; border: 2px solid #EDC484; padding: 10px; object-fit: cover; }
         .about-text-box { width: 635px; height: 503px; display: flex; flex-direction: column; justify-content: center; text-align: center; }
         .about-text-box h3 { font-family: 'Sawarabi Mincho', serif; color: #EDC484; font-size: 28px; margin-bottom: 15px; font-style: italic; }
         .about-text-box p { font-size: 16px; line-height: 1.6; margin-bottom: 25px; opacity: 0.9; }
 
-        /* --- SECCIÓN SERVICIOS DESTACADOS --- */
+        /* Contenedores de Tarjetas de Servicios en Vitrina */
         .services-section { max-width: 1440px; margin: 0 auto; padding: 80px 50px; text-align: center; color: #29030E; }
         .services-section h2 { font-family: 'Sawarabi Mincho', serif; font-size: 36px; margin-bottom: 10px; }
         .services-container { display: flex; justify-content: center; gap: 40px; margin-top: 50px; }
@@ -105,7 +116,7 @@ $comentarios = [
         .service-info h4 { font-size: 20px; color: #EDC484; font-family: 'Sawarabi Mincho', serif; }
         .service-badge { position: absolute; top: 25px; right: 20px; background-color: #420516; padding: 4px 10px; border-radius: 10px; font-size: 12px; color: #EDC484; }
 
-        /* --- SECCIÓN RESEÑAS --- */
+        /* Bloque de Comentarios y Feedbacks */
         .reviews-section { background-color: #52131E; padding: 60px 50px; color: #FFEED5; }
         .reviews-container { max-width: 1119px; margin: 0 auto; }
         .reviews-section h3 { font-family: 'Sawarabi Mincho', serif; font-size: 28px; color: #EDC484; font-style: italic; }
@@ -116,7 +127,7 @@ $comentarios = [
         .review-details h5 { font-size: 16px; color: #52131E; font-weight: 600; }
         .review-details p { font-size: 14px; margin-top: 6px; opacity: 0.9; }
 
-        /* --- FOOTER --- */
+        /* Footer del Sitio */
         .main-footer { background-color: #1A1211; padding: 60px 100px; display: flex; justify-content: space-between; }
         .footer-brand { width: 350px; }
         .footer-brand h4 { font-family: 'Sawarabi Mincho', serif; color: #EDC484; font-size: 24px; margin-bottom: 15px; }
@@ -135,6 +146,7 @@ $comentarios = [
             <li><a href="#">Sucursales</a></li>
             <li><a href="#">Trabaja con nosotros</a></li>
         </ul>
+        
         <div class="nav-user-zone">
             <?php if ($sesion_activa): ?>
                 <div class="user-dropdown-container">
@@ -242,15 +254,20 @@ $comentarios = [
     <script>
         const dropdownBtn = document.getElementById('dropdownBtn');
         const dropdownMenu = document.getElementById('dropdownMenu');
+        
         if (dropdownBtn && dropdownMenu) {
+            // Alternamos la visibilidad del menú al hacer clic sobre el botón
             dropdownBtn.addEventListener('click', function(e) { 
-                e.stopPropagation(); 
+                e.stopPropagation(); // Detiene la propagación para evitar que el evento del document lo cierre de inmediato
                 dropdownMenu.classList.toggle('show'); 
             });
+            
+            // Si el menú está abierto y el usuario da clic en cualquier otra parte de la pantalla, lo ocultamos
             document.addEventListener('click', function() { 
                 dropdownMenu.classList.remove('show'); 
             });
         }
     </script>
 </body>
-</html>
+</html>n</h3>
+            <p>Of
