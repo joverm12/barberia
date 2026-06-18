@@ -79,10 +79,30 @@ try {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barber House - Editar Privilegios</title>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
-        /* Ajustes globales de maquetación */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #29030E; font-family: 'Instrument Sans', sans-serif; color
+        body { background-color: #29030E; font-family: sans-serif; color: #FFF; padding: 50px; }
+        .form-container { background: #380A14; padding: 30px; border-radius: 15px; max-width: 500px; margin: auto; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { background: #EDC484; border: none; padding: 10px 20px; cursor: pointer; width: 100%; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Editar Usuario: <?php echo htmlspecialchars($user['nombre']); ?></h2>
+        <?php if ($error) echo "<p style='color:red;'>$error</p>"; ?>
+        <form method="POST">
+            <input type="text" name="nombre" value="<?php echo htmlspecialchars($user['nombre']); ?>" required>
+            <input type="text" name="apellido" value="<?php echo htmlspecialchars($user['apellido']); ?>" required>
+            <input type="email" name="correo" value="<?php echo htmlspecialchars($user['correo']); ?>" required>
+            <input type="text" name="telefono" value="<?php echo htmlspecialchars($user['telefono']); ?>">
+            <select name="rol">
+                <option value="Cliente" <?php if($user['rol'] == 'Cliente') echo 'selected'; ?>>Cliente</option>
+                <option value="Trabajador" <?php if($user['rol'] == 'Trabajador') echo 'selected'; ?>>Trabajador</option>
+                <option value="Administrador" <?php if($user['rol'] == 'Administrador') echo 'selected'; ?>>Administrador</option>
+            </select>
+            <button type="submit">Actualizar Usuario</button>
+        </form>
+    </div>
+</body>
+</html>
