@@ -1,29 +1,51 @@
 <?php
+/**
+ * ARCHIVO: perfil.php
+ * DESCRIPCIÓN: 
+ * Este archivo actúa como el núcleo o "Dashboard Polimórfico" de Barber House. 
+ * Evalúa el nivel de privilegios (Rol) almacenado en la sesión activa del usuario 
+ * para renderizar interfaces totalmente personalizadas:
+ * - Clientes: Visualizan el historial de sus próximas citas programadas y precios.
+ * - Staff (Barberos/Estilistas): Cargan su agenda laboral enlazada de forma automática.
+ * - Administradores: Acceden al centro de control maestro del CRUD de usuarios.
+ */
+
+// Iniciamos la sesión para poder verificar quién solicita la página
 session_start();
+// Importamos la conexión centralizada mediante PDO
 require_once 'conexion.php';
 
+// Filtro de control: Si el usuario intenta saltarse el login, es rebotado al index
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit;
 }
 
+// Extraemos los datos de contexto del usuario en sesión
 $id_usuario = $_SESSION['user_id'];
 $nombre     = $_SESSION['user_name'];
 $apellido   = $_SESSION['user_last'];
 $rol        = $_SESSION['user_rol'];
 
+// Normalizamos el rol para mitigar fallas por mayúsculas o espacios accidentales
 $rol_evaluar = strtolower(trim($rol));
 
+// Inicializamos los contenedores de datos según la interfaz que corresponda inyectar
 $citas = [];
 $usuarios = []; 
 
+// =========================================================================
+// MÓDULO 1: COMPORTAMIENTO PARA ROLES DE TIPO 'CLIENTE'
+// =========================================================================
 if ($rol_evaluar === 'cliente') {
+    // Primero, buscamos el ID relacional único en la tabla intermedia de clientes
     $stmtCliente = $pdo->prepare("SELECT id_cliente FROM cliente WHERE id_usuario = ?");
     $stmtCliente->execute([$id_usuario]);
     $clienteObj = $stmtCliente->fetch();
 
     if ($clienteObj) {
         $id_cliente = $clienteObj['id_cliente'];
+        // Query multi-join para reconstruir el ticket de la agenda del cliente en orden cronológico
         $sql = "SELECT c.hora, c.estado, s.nombre AS servicio, s.precio AS servicio_precio, suc.nombre AS sucursal, u_emp.nombre AS barbero
                 FROM cita c
                 LEFT JOIN servicio s ON c.id_servicio = s.id_servicio
@@ -37,13 +59,18 @@ if ($rol_evaluar === 'cliente') {
         $citas = $stmtCitas->fetchAll();
     }
 
+// =========================================================================
+// MÓDULO 2: COMPORTAMIENTO PARA EL STAFF OPERATIVO (BARBEROS, ESTILISTAS, ETC.)
+// =========================================================================
 } elseif ($rol_evaluar === 'barbero' || $rol_evaluar === 'trabajador' || $rol_evaluar === 'estilista') {
+    // Buscamos el identificador del profesional enlazado a su cuenta base de usuario
     $stmtEmpleado = $pdo->prepare("SELECT id_empleado FROM empleado WHERE id_usuario = ?");
     $stmtEmpleado->execute([$id_usuario]);
     $empleadoObj = $stmtEmpleado->fetch();
 
     if ($empleadoObj) {
         $id_empleado = $empleadoObj['id_empleado'];
+        // Query estructurada para traerle al barbero los datos de contacto del cliente que reservó
         $sql = "SELECT c.hora, c.estado, s.nombre AS servicio, suc.nombre AS sucursal, u_cli.nombre AS cliente_nombre, u_cli.apellido AS cliente_apellido
                 FROM cita c
                 LEFT JOIN servicio s ON c.id_servicio = s.id_servicio
@@ -57,9 +84,12 @@ if ($rol_evaluar === 'cliente') {
         $citas = $stmtCitas->fetchAll();
     }
 
+// =========================================================================
+// MÓDULO 3: COMPORTAMIENTO PARA ADMINISTRADORES PRINCIPALES
+// =========================================================================
 } else {
-    // FUERZA BRUTA: Si llegó aquí, traemos los usuarios sí o sí
     try {
+        // Traemos de forma descendente todas las cuentas globales registradas para el centro de control CRUD
         $stmtAdmin = $pdo->query("SELECT * FROM usuario ORDER BY id_usuario DESC");
         $usuarios = $stmtAdmin->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -81,13 +111,14 @@ if ($rol_evaluar === 'cliente') {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Instrument Sans', sans-serif; overflow-x: hidden; }
 
+        /* Renderizado condicional del CSS de fondo: Ajusta la paleta de colores según el tipo de panel a pintar */
         <?php if ($rol_evaluar === 'administrador' || $rol_evaluar === 'admin' || count($usuarios) > 0): ?>
             body { background-color: #52131E; color: #FFEED5; }
         <?php else: ?>
             body { background-color: #FCF6ED; color: #231918; padding: 40px 20px; }
         <?php endif; ?>
 
-        /* --- INTERFAZ TRADICIONAL --- */
+        /* --- CLASES DE LA INTERFAZ TRADICIONAL (CLIENTES / TRABAJADORES) --- */
         .container { max-width: 1100px; margin: 0 auto; background: #FFFFFF; border-radius: 30px; padding: 40px; box-shadow: 0px 10px 30px rgba(0,0,0,0.03); color: #231918; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(82, 19, 30, 0.1); padding-bottom: 20px; margin-bottom: 30px; }
         .welcome-title { font-family: 'Sawarabi Mincho', serif; font-size: 32px; color: #52131E; }
@@ -102,7 +133,7 @@ if ($rol_evaluar === 'cliente') {
         .status.finalizada, .status.completada { background-color: #D4EDDA; color: #155724; }
         .no-data { text-align: center; padding: 30px; color: #777; font-style: italic; }
 
-        /* --- INTERFAZ ADMIN PREMIUM --- */
+        /* --- CLASES DE LA INTERFAZ MAESTRA PREMIUM (ADMINISTRADORES) --- */
         .navbar-admin { width: 100%; height: 109px; background-color: #52131E; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; border-bottom: 1px solid rgba(237, 196, 132, 0.15); }
         .nav-left { display: flex; align-items: center; gap: 20px; }
         .nav-logo img { height: 60px; width: auto; object-fit: contain; }
@@ -169,7 +200,7 @@ if ($rol_evaluar === 'cliente') {
                                     <th>Precio</th>
                                     <th>Estado</th>
                                 </tr>
-                            </thead>
+                            </tbody>
                             <tbody>
                                 <?php foreach ($citas as $cita): ?>
                                     <tr>
@@ -249,6 +280,7 @@ if ($rol_evaluar === 'cliente') {
                     </thead>
                     <tbody id="adminTableBody">
                         <?php foreach ($usuarios as $u): 
+                            // Adaptación dinámica de etiquetas CSS según el rol exacto de la base de datos
                             $rol_actual = htmlspecialchars($u['rol']);
                             $rol_lower = strtolower(trim($rol_actual));
                             $clase_badge = 'cliente';
@@ -283,13 +315,20 @@ if ($rol_evaluar === 'cliente') {
         </div>
 
         <script>
+            // Lógica del Dropdown del Administrador
             const menuToggle = document.getElementById('menuToggle');
             const menuDropdown = document.getElementById('menuDropdown');
             if (menuToggle && menuDropdown) {
-                menuToggle.addEventListener('click', function(e) { e.stopPropagation(); menuDropdown.classList.toggle('show'); });
-                document.addEventListener('click', function() { menuDropdown.classList.remove('show'); });
+                menuToggle.addEventListener('click', function(e) { 
+                    e.stopPropagation(); 
+                    menuDropdown.classList.toggle('show'); 
+                });
+                document.addEventListener('click', function() { 
+                    menuDropdown.classList.remove('show'); 
+                });
             }
 
+            // Motor de filtrado inmediato de usuarios en el lado del cliente (Front-end)
             const adminSearch = document.getElementById('adminSearch');
             const adminRoleFilter = document.getElementById('adminRoleFilter');
             const itemRows = document.querySelectorAll('.item-row');
@@ -297,18 +336,26 @@ if ($rol_evaluar === 'cliente') {
             function realizarFiltro() {
                 const query = adminSearch.value.toLowerCase();
                 const role = adminRoleFilter.value.toLowerCase();
+                
                 itemRows.forEach(row => {
                     const text = row.textContent.toLowerCase();
                     const rowRole = row.getAttribute('data-rol').toLowerCase();
+                    
+                    // Comprobamos correspondencia por texto del buscador
                     const matchesSearch = text.includes(query);
+                    // Comprobamos agrupación de roles (Unificamos barberos, estilistas bajo el filtro 'trabajador')
                     const matchesRole = (role === 'todos' || rowRole === role || (role === 'trabajador' && (rowRole === 'barbero' || rowRole === 'estilista' || rowRole === 'trabajador')));
+                    
+                    // Mostramos u ocultamos la fila según las banderas de coincidencia
                     row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
                 });
             }
+            
+            // Escuchadores de eventos para recalcular la grilla en tiempo real
             adminSearch.addEventListener('input', realizarFiltro);
             adminRoleFilter.addEventListener('change', realizarFiltro);
             
-            // Forzar renderizado inicial por si acaso
+            // Forzamos una ejecución inicial preventiva para consolidar los estados visuales
             realizarFiltro();
         </script>
     <?php endif; ?>
