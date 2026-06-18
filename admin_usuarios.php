@@ -1,20 +1,33 @@
 <?php
+/**
+ * ARCHIVO: admin_usuarios.php
+ * DESCRIPCIÓN: 
+ * Panel de administración para la gestión de usuarios y roles dentro del sistema.
+ * Este script valida que únicamente los usuarios con rol de 'Administrador' tengan 
+ * acceso. Recupera la lista completa de usuarios registrados y expone herramientas 
+ * visuales premium para buscar, filtrar por rol, editar o dar de baja registros de forma dinámica.
+ */
+
+// Iniciamos la sesión para evaluar quién está intentando ingresar
 session_start();
+// Conectamos a la base de datos
 require_once 'conexion.php';
 
-// SEGURIDAD: Solo el Administrador puede entrar aquí
+// Filtro estricto de seguridad: Si no hay sesión o el rol no es Administrador, lo sacamos de aquí
 if (!isset($_SESSION['user_id']) || $_SESSION['user_rol'] !== 'Administrador') {
     header('Location: index.php');
     exit;
 }
 
+// Tomamos el nombre del administrador para personalizar la bienvenida (por si acaso, dejamos un valor por defecto)
 $nombre_admin = $_SESSION['user_name'] ?? 'Administrador';
 
-// Consultar de forma limpia todos los usuarios de la base de datos
+// Intentamos traer la lista completa de usuarios ordenados desde el más reciente
 try {
     $stmt = $pdo->query("SELECT id_usuario, nombre, apellido, cedula, correo, telefono, rol FROM usuario ORDER BY id_usuario DESC");
     $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
+    // Si algo falla con la base de datos, vaciamos el array para evitar que el HTML rompa al renderizar
     $usuarios = [];
 }
 ?>
@@ -26,10 +39,11 @@ try {
     <title>Barber House - Administración de Roles</title>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
+        /* Reseteo general de márgenes y caja del documento */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #29030E; font-family: 'Instrument Sans', sans-serif; color: #FFEED5; overflow-x: hidden; }
 
-        /* --- NAVBAR SUPERIOR PREMIUM (FIGMA) --- */
+        /* Estilos del Navbar Superior (Basado en los requerimientos de diseño de Figma) */
         .admin-navbar {
             background-color: #420516;
             width: 100%;
@@ -52,15 +66,15 @@ try {
             color: #EDC484; font-size: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;
         }
 
-        /* --- CONTENEDOR CENTRAL --- */
+        /* Estructura del contenedor principal */
         .main-admin-wrapper { width: 1400px; max-width: 95%; margin: 40px auto; padding-bottom: 60px; }
 
-        /* Cuadro de Título Interno */
+        /* Encabezado interno del panel */
         .title-panel { margin-bottom: 30px; }
         .title-panel h2 { font-family: 'Sawarabi Mincho', serif; font-size: 36px; color: #EDC484; font-weight: 400; }
         .title-panel p { font-size: 14px; opacity: 0.6; margin-top: 4px; }
 
-        /* BARRA DE FILTROS (CAMPOS DE BÚSQUEDA) */
+        /* Zona de control para búsquedas y filtrados rápidos */
         .filters-row { display: flex; gap: 20px; margin-bottom: 30px; }
         
         .search-box-wrapper { position: relative; flex: 1; }
@@ -76,7 +90,7 @@ try {
             padding: 0 25px; font-size: 15px; color: #29030E; outline: none; cursor: pointer;
         }
 
-        /* --- CENTRAL TABLE CARD --- */
+        /* Tarjeta contenedora de la grilla de datos */
         .table-container-card {
             background-color: #420516;
             border: 2px solid #52131E;
@@ -93,19 +107,17 @@ try {
         .admin-table td { padding: 20px 15px; font-size: 15px; border-bottom: 1px solid rgba(255, 238, 213, 0.05); vertical-align: middle; }
         .admin-table tr:last-child td { border-bottom: none; }
 
-        /* Detalle de Contacto */
         .contact-cell div { font-size: 14px; opacity: 0.6; margin-top: 4px; }
 
-        /* BADGES DINÁMICOS DE ROLES (IGUAL A FIGMA) */
+        /* Estilos de Badges (Etiquetas de color para identificar roles ágilmente) */
         .role-badge { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-block; }
         .role-badge.cliente { background-color: rgba(234, 67, 53, 0.15); color: #FF8A80; }
         .role-badge.barbero { background-color: rgba(33, 150, 243, 0.15); color: #90CAF9; }
         .role-badge.administrador { background-color: rgba(237, 196, 132, 0.15); color: #EDC484; }
 
-        /* ESTADO ACTIVO */
         .status-badge { background-color: rgba(76, 175, 80, 0.15); color: #A5D6A7; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(76, 175, 80, 0.3); }
 
-        /* BOTONES REDONDOS DE ACCIONES */
+        /* Botones de acción (Editar y Eliminar) */
         .action-button { 
             width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(237, 196, 132, 0.3); 
             background-color: transparent; color: #EDC484; font-size: 16px; cursor: pointer; 
@@ -114,7 +126,7 @@ try {
         .action-button:hover { background-color: #EDC484; color: #29030E; border-color: #EDC484; }
         .action-button.btn-delete-row:hover { background-color: #EA4335; color: white; border-color: #EA4335; }
 
-        /* MENSAJES DE ALERTA */
+        /* Alertas flotantes (Toasts de confirmación) */
         .alert-toast { padding: 15px 25px; background-color: #FCF6ED; color: #29030E; border-left: 5px solid #2E7D32; border-radius: 4px; margin-bottom: 25px; font-weight: 500; }
     </style>
 </head>
@@ -179,7 +191,7 @@ try {
                 <tbody id="usersTableBody">
                     <?php if (count($usuarios) > 0): ?>
                         <?php foreach ($usuarios as $u): 
-                            // Configurar la clase estética del badge según el rol exacto
+                            // Determinamos visualmente el estilo de la etiqueta basándonos en su rol asignado
                             $rol_actual = htmlspecialchars($u['rol']);
                             $clase_badge = 'cliente';
                             if ($rol_actual === 'Administrador') $clase_badge = 'administrador';
@@ -236,9 +248,11 @@ try {
                 const textContent = row.textContent.toLowerCase();
                 const rowRole = row.getAttribute('data-rol');
 
+                // Validamos si la fila cumple simultáneamente con el texto buscado y el rol seleccionado
                 const matchesSearch = textContent.includes(searchText);
                 const matchesRole = (selectedRole === 'todos' || rowRole === selectedRole);
 
+                // Mostramos u ocultamos la fila según corresponda
                 if (matchesSearch && matchesRole) {
                     row.style.display = '';
                 } else {
@@ -247,6 +261,7 @@ try {
             });
         }
 
+        // Escuchamos la escritura en el buscador y el cambio de selector para ejecutar el filtro
         tableSearch.addEventListener('input', filtrarTabla);
         roleFilter.addEventListener('change', filtrarTabla);
     </script>
