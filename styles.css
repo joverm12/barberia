@@ -1,29 +1,41 @@
+/**
+ * ARCHIVO: styles.css
+ * DESCRIPCIÓN: 
+ * Hoja de estilos centralizada para la interfaz de Iniciar Sesión (index.php).
+ * Estructura un diseño de pantalla dividida (Split Screen) adaptado milimétricamente 
+ * a los requerimientos visuales de Figma. Incluye personalización de scrollbars nativos, 
+ * un esquema cromático premium basado en tonos vino, crema y dorado, y directrices 
+ * responsivas para ocultar la sección de impacto visual en dispositivos móviles.
+ */
+
+/* --- RESETEO GENERAL DEL MODELO DE CAJA --- */
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Fuerza a que los bordes y paddings se calculen dentro del ancho del elemento */
 }
 
-/* --- REGLAS PARA PERSONALIZAR EL TUBO DE EXPLORACIÓN (SCROLLBAR) --- */
+/* --- REGLAS PARA PERSONALIZAR EL TUBO DE EXPLORACIÓN (SCROLLBAR CHROME/WEBKIT) --- */
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 10px; /* Ancho estructural de la barra de desplazamiento lateral */
 }
 
 ::-webkit-scrollbar-track {
-    background: #FCF6ED; 
+    background: #FCF6ED; /* Fondo color crema para ocultar el riel de fondo */
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #52131E; 
-    border-radius: 10px;
+    background: #52131E; /* Color vino principal para el indicador de posición */
+    border-radius: 10px; /* Esquinas completamente redondeadas para suavizar la interfaz */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #780524; 
+    background: #780524; /* Tonalidad de vino más viva cuando el usuario pasa el cursor por encima */
 }
 
+/* --- ESTILOS PARA EL LIENZO BASE DE LA PÁGINA --- */
 body {
-    background-color: #FCF6ED; /* Fondo color crema del lienzo */
+    background-color: #FCF6ED; /* Fondo color crema del lienzo general */
     font-family: 'Instrument Sans', sans-serif;
     min-height: 100vh; 
     display: flex;
@@ -31,34 +43,39 @@ body {
     align-items: center;
 }
 
+/* --- ENVOLTURA MAESTRA DEL SISTEMA DE LOGIN --- */
 .login-container {
-    display: flex;
+    display: flex; /* Alineación horizontal tipo split-screen para el formulario y la imagen */
     width: 100%;
-    max-width: 1440px;
+    max-width: 1440px; /* Límite estructural de diseño de escritorio premium */
     height: 100vh;
     max-height: 1019px;
     background-color: #FCF6ED;
-    overflow-y: auto; 
+    overflow-y: auto; /* Habilita el desplazamiento vertical si el contenido desborda en pantallas pequeñas */
     position: relative;
 }
 
-/* --- COLUMNA IZQUIERDA --- */
+/* =========================================================================
+   MÓDULO 1: COLUMNA IZQUIERDA - CAPTURA DE DATOS Y FORMULARIO
+   ========================================================================= */
 .form-section {
-    flex: 1;
+    flex: 1; /* Permite que la sección se expanda proporcionalmente ocupando el espacio disponible */
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 40px;
 }
 
+/* Contenedor interno que limita el ancho de los inputs */
 .form-content {
     width: 100%;
-    max-width: 551px; /* Ancho exacto de tus bloques de diseño */
+    max-width: 551px; /* Ancho exacto de los bloques funcionales definidos en Figma */
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+/* Identidad corporativa de Barber House */
 .logo {
     max-width: 100%;
     height: auto;
@@ -66,11 +83,12 @@ body {
     margin-bottom: 20px; 
 }
 
+/* Tipografía serif con aires clásicos para el título principal */
 .main-title {
     font-family: 'Sawarabi Mincho', serif;
     font-size: 40px;
     font-weight: 400;
-    color: #52131E; /* Color vino oscuro del título */
+    color: #52131E; /* Color vino oscuro institucional */
     text-align: center;
     margin-bottom: 35px;
 }
@@ -79,6 +97,7 @@ form {
     width: 100%;
 }
 
+/* Bloques de empaquetado para inputs y sus respectivas etiquetas */
 .input-group {
     margin-bottom: 25px;
     display: flex;
@@ -96,20 +115,22 @@ form {
 .input-group input {
     width: 100%;
     height: 70px;
-    background-color: #780524; /* Fondo vino de las cajas */
+    background-color: #780524; /* Fondo vino interno para resaltar las cajas de texto */
     border: none;
-    border-radius: 40px;
+    border-radius: 40px; /* Bordes completamente ovalados para mantener el estilo del prototipo */
     padding: 0 35px;
     font-size: 22px;
-    color: #EDC484; /* Color del texto que se escribe */
+    color: #EDC484; /* Contenido escrito en color dorado/crema de alto contraste */
     font-family: 'Instrument Sans', sans-serif;
     outline: none;
 }
 
+/* Estilización del texto de sugerencia interno (Placeholder) */
 .input-group input::placeholder {
-    color: rgba(237, 196, 132, 0.6); 
+    color: rgba(237, 196, 132, 0.6); /* Dorado suavizado con opacidad */
 }
 
+/* Contenedor para el enlace de recuperación de contraseña */
 .forgot-container {
     width: 100%;
     text-align: right; 
@@ -125,10 +146,10 @@ form {
 }
 
 .forgot-link:hover {
-    text-decoration: underline;
+    text-decoration: underline; /* Feedback visual sutil para el usuario */
 }
 
-/* Botón Ingresar */
+/* Botón de envío nativo (INGRESAR) */
 .btn-submit {
     width: 325px;
     height: 70px;
@@ -141,17 +162,17 @@ form {
     font-weight: 500;
     cursor: pointer;
     display: block;
-    margin: 0 auto 35px auto;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    margin: 0 auto 35px auto; /* Centrado horizontal automático */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Efecto de elevación sutil */
+    transition: all 0.3s ease; /* Transición suave para las interacciones */
 }
 
 .btn-submit:hover {
-    background-color: #3d0e16;
-    transform: translateY(-1px);
+    background-color: #3d0e16; /* Oscurece el botón al pasar el mouse */
+    transform: translateY(-1px); /* Pequeño salto de respuesta táctil */
 }
 
-/* Divisor ACCEDER CON */
+/* Línea divisoria decorativa con texto central integrado (ACCEDER CON) */
 .divider {
     width: 100%;
     text-align: center;
@@ -161,14 +182,14 @@ form {
 }
 
 .divider span {
-    background: #FCF6ED;
+    background: #FCF6ED; /* Seteamos el mismo fondo del lienzo para ocultar la línea por debajo del texto */
     padding: 0 20px;
     font-size: 18px;
     color: #231918;
     font-weight: 500;
 }
 
-/* Botón de Google */
+/* Botón interactivo para integración con OAuth de Google */
 .btn-google {
     width: 321px;
     height: 61px;
@@ -182,7 +203,7 @@ form {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 15px; /* Separación interna entre el isotipo svg y el texto */
     cursor: pointer;
     margin-bottom: 35px;
     transition: all 0.3s ease;
@@ -197,7 +218,7 @@ form {
     height: 24px;
 }
 
-/* Texto de términos al pie */
+/* Bloque de texto legal al pie del formulario */
 .terms-text {
     font-size: 14px;
     color: #231918;
@@ -207,17 +228,20 @@ form {
     opacity: 0.9;
 }
 
-/* --- COLUMNA DERECHA (IMAGEN FIJA) --- */
+/* =========================================================================
+   MÓDULO 2: COLUMNA DERECHA - BANNER DE BRANDING / IMAGEN FIJA
+   ========================================================================= */
 .image-section {
     width: 783px; 
     height: 100vh;
-    background-image: url('imagenes/barber-image.png'); /* <-- Ruta actualizada a la carpeta imagenes */
+    background-image: url('imagenes/barber-image.png'); /* Ruta relativa enlazada a la carpeta de recursos */
     background-size: cover;
     background-position: center;
-    position: sticky;
+    position: sticky; /* Se fija en la pantalla durante el desplazamiento */
     top: 0;
 }
 
+/* Superposición de degradado oscuro sobre la fotografía para mejorar la atmósfera del login */
 .linear-overlay {
     position: absolute;
     top: 0;
@@ -225,10 +249,14 @@ form {
     width: 100%;
     height: 100%;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
-    pointer-events: none;
+    pointer-events: none; /* Permite que los clics ignoren la capa y no bloqueen la interfaz */
 }
 
+/* =========================================================================
+   MÓDULO 3: DIRECTRICES ADAPTATIVAS (RESPONSIVE DESIGN)
+   ========================================================================= */
 @media (max-width: 1100px) {
+    /* En tablets y smartphones, removemos la sección fotográfica para priorizar el formulario de acceso */
     .image-section {
         display: none; 
     }
