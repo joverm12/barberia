@@ -1,21 +1,38 @@
 <?php
+/**
+ * ARCHIVO: agendar_cita.php
+ * DESCRIPCIÓN: 
+ * Este módulo sirve como la interfaz de reservas para los clientes de Barber House. 
+ * Se encarga de validar la sesión activa, traer desde la base de datos la información 
+ * de sucursales, servicios y barberos disponibles, y desplegar un formulario interactivo. 
+ * Incluye un panel dinámico para desglosar servicios complementarios y calcular el total 
+ * estimado antes de enviar la información al procesador de reservas.
+ */
+
+// Iniciamos la sesión para comprobar que el cliente está autenticado
 session_start();
+// Traemos la conexión segura a la base de datos
 require_once 'conexion.php';
 
+// Si el usuario no tiene una sesión activa, lo redirigimos al login por protección
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit;
 }
 
+// Almacenamos los datos de contexto del usuario actual
 $id_usuario = $_SESSION['user_id'];
 $rol_usuario = $_SESSION['user_rol'];
 
-// Consultas a la base de datos
+// Consultas globales: Alimentamos los elementos select del formulario de forma limpia
 try {
     $sucursales = $pdo->query("SELECT * FROM sucursal")->fetchAll(PDO::FETCH_ASSOC);
     $servicios  = $pdo->query("SELECT * FROM servicio")->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Para los empleados hacemos un JOIN, trayendo sus datos profesionales enlazados a su nombre real
     $empleados  = $pdo->query("SELECT e.id_empleado, u.nombre, u.apellido FROM empleado e JOIN usuario u ON e.id_usuario = u.id_usuario")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
+    // Si la base de datos falla, inicializamos en vacío para evitar errores de renderizado en los bucles HTML
     $sucursales = [];
     $servicios = [];
     $empleados = [];
@@ -29,17 +46,20 @@ try {
     <title>Barber House - Reservar Cita</title>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
+        /* Ajustes básicos de reseteo */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #29030E; font-family: 'Instrument Sans', sans-serif; color: #FFEED5; min-height: 100vh; }
         
+        /* Navbar Principal */
         .navbar { background-color: #52131E; width: 100%; height: 109px; display: flex; justify-content: space-between; align-items: center; padding: 0 50px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); }
         .nav-logo img { height: 65px; width: auto; }
         .nav-links { display: flex; gap: 40px; list-style: none; }
         .nav-links a { color: #FFEED5; text-decoration: none; font-size: 18px; }
 
+        /* Contenedor del módulo de reservas */
         .booking-wrapper { width: 1400px; max-width: 95%; margin: 40px auto; background-color: #FCF6ED; border-radius: 25px; display: block; color: #29030E; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
         
-        /* Layout estructurado mediante comportamiento de tabla para evitar desalineación */
+        /* Estructuración por comportamiento de tabla para evitar desajustes en pantallas grandes */
         .layout-table { display: table; width: 100%; table-layout: fixed; }
         .form-panel { display: table-cell; width: 63%; padding: 45px; vertical-align: top; }
         .summary-panel { display: table-cell; width: 37%; padding: 45px; background-color: #FDFBF7; border-left: 1px solid rgba(82, 19, 30, 0.1); vertical-align: top; }
@@ -51,12 +71,12 @@ try {
         select, input, textarea { width: 100%; height: 48px; border: 1px solid rgba(82, 19, 30, 0.3); border-radius: 8px; padding: 0 15px; font-size: 15px; color: #29030E; background-color: #FFFFFF; outline: none; }
         textarea { height: 110px; padding: 15px; resize: none; }
         
-        /* Columnas del formulario */
+        /* Sistema de columnas integradas para filas compuestas */
         .row-grid { display: block; margin-top: 10px; }
         .col-50 { display: inline-block; width: 48%; vertical-align: top; }
         .col-50:last-child { margin-left: 3.5%; }
         
-        /* --- CORRECCIÓN DEFINITIVA DE SERVICIOS COMPLEMENTARIOS --- */
+        /* Estilos específicos para la sección de servicios adicionales (Checkboxes alineados) */
         .complements-box { 
             margin-top: 20px; 
             background-color: #FFF5F5; 
@@ -65,43 +85,19 @@ try {
             border: 1px dashed rgba(82, 19, 30, 0.15); 
         }
         
-        .checkbox-row {
-            display: block;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-        .checkbox-row:last-child {
-            margin-bottom: 0;
-        }
+        .checkbox-row { display: block; margin-bottom: 15px; cursor: pointer; }
+        .checkbox-row:last-child { margin-bottom: 0; }
 
-        /* Alineación milimétrica del cuadro con el texto */
-        .checkbox-cell {
-            display: inline-block;
-            vertical-align: middle;
-            width: 24px;
-            height: 24px;
-        }
-        .checkbox-cell input[type="checkbox"] {
-            width: 20px !important;
-            height: 20px !important;
-            cursor: pointer;
-            display: block;
-            margin: 2px 0 0 0;
-        }
+        /* Alineación exacta para que el recuadro del checkbox y el texto queden perfectamente horizontales */
+        .checkbox-cell { display: inline-block; vertical-align: middle; width: 24px; height: 24px; }
+        .checkbox-cell input[type="checkbox"] { width: 20px !important; height: 20px !important; cursor: pointer; display: block; margin: 2px 0 0 0; }
         
-        .text-cell {
-            display: inline-block;
-            vertical-align: middle;
-            padding-left: 10px;
-            font-size: 15px;
-            color: #52131E;
-            font-weight: 500;
-            line-height: 24px;
-        }
+        .text-cell { display: inline-block; vertical-align: middle; padding-left: 10px; font-size: 15px; color: #52131E; font-weight: 500; line-height: 24px; }
         
         .btn-confirm { width: 100%; height: 55px; background-color: #52131E; color: #FFEED5; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; transition: background 0.3s; }
         .btn-confirm:hover { background-color: #29030E; }
         
+        /* Estilos del listado del desglose final en el panel derecho */
         .summary-list { list-style: none; margin-top: 20px; }
         .summary-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed rgba(82, 19, 30, 0.15); font-size: 15px; }
         .summary-item.total { border-top: 2px solid #52131E; font-size: 32px; font-family: 'Sawarabi Mincho', serif; color: #52131E; margin-top: 40px; padding-top: 15px; }
@@ -121,7 +117,6 @@ try {
     <div class="booking-wrapper">
         <div class="layout-table">
             
-            <!-- Panel Izquierdo: Formulario -->
             <div class="form-panel">
                 <h2>Detalle de la Cita</h2>
                 <form action="procesar_reserva.php" method="POST">
@@ -157,7 +152,6 @@ try {
                         </div>
                     </div>
 
-                    <!-- SECCIÓN CORREGIDA DE SERVICIOS COMPLEMENTARIOS -->
                     <label>Servicios Complementarios (Opcional)</label>
                     <div class="complements-box">
                         <label class="checkbox-row">
@@ -200,7 +194,6 @@ try {
                 </form>
             </div>
 
-            <!-- Panel Derecho: Resumen -->
             <div class="summary-panel">
                 <div style="min-height: 250px;">
                     <h3>Resumen del Servicio</h3>
@@ -234,15 +227,20 @@ try {
             let html = '';
             const selectedOption = selectServicio.options[selectServicio.selectedIndex];
             
+            // Si el usuario seleccionó un servicio válido, activamos la lógica del ticket
             if (selectedOption && selectedOption.value !== '') {
                 summaryPlaceholder.style.display = 'none';
                 summaryList.style.display = 'block';
                 
+                // Extraemos el costo base y nombre del servicio principal
                 const precioBase = parseFloat(selectedOption.getAttribute('data-precio'));
                 const nombreBase = selectedOption.getAttribute('data-nombre');
                 total += precioBase;
+                
+                // Añadimos la primera línea al HTML del desglose
                 html += `<li class="summary-item"><span>${nombreBase}</span><strong>$${precioBase.toFixed(2)}</strong></li>`;
                 
+                // Recorremos los checkboxes para verificar cuáles extras están activos y sumarlos
                 extraChecks.forEach(check => {
                     if (check.checked) {
                         const precioExtra = parseFloat(check.value);
@@ -251,15 +249,18 @@ try {
                     }
                 });
                 
+                // Inyectamos el desglose armado y el gran total formateado a dos decimales
                 summaryList.innerHTML = html;
                 totalLabel.innerText = `$${total.toFixed(2)}`;
             } else {
+                // Si limpia el selector, regresamos el resumen a su estado inicial por defecto
                 summaryPlaceholder.style.display = 'block';
                 summaryList.style.display = 'none';
                 totalLabel.innerText = '$0.00';
             }
         }
 
+        // Eventos para actualizar automáticamente la información ante cualquier cambio en el formulario
         selectServicio.addEventListener('change', actualizarResumen);
         extraChecks.forEach(check => check.addEventListener('change', actualizarResumen));
     </script>
