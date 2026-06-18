@@ -1,4 +1,17 @@
-<?php include 'login.php'; ?>
+<?php
+/**
+ * ARCHIVO: index.php
+ * DESCRIPCIÓN: 
+ * Este archivo sirve como el punto de entrada principal (Landing de Acceso) de Barber House. 
+ * Su función primordial es renderizar el formulario de inicio de sesión de la plataforma. 
+ * Integra de forma directa el script de control 'login.php' en la cabecera para evaluar 
+ * las peticiones POST de autenticación, procesar las credenciales capturadas y desplegar 
+ * de manera dinámica alertas visuales en caso de accesos fallidos.
+ */
+
+// Importamos el motor lógico que procesa las credenciales del formulario
+include 'login.php'; 
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
