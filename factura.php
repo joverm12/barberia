@@ -1,15 +1,30 @@
 <?php
+/**
+ * ARCHIVO: factura.php
+ * DESCRIPCIÓN: 
+ * Este script genera el comprobante y la vista de la Factura Digital para el cliente. 
+ * Extrae los datos del usuario en sesión, simula identificadores de transacciones 
+ * únicos y expone una plantilla HTML/CSS optimizada de forma milimétrica. 
+ * Su característica principal es la integración de reglas de impresión nativas 
+ * que permiten transformar la vista web en un documento PDF limpio y estilizado 
+ * al presionar un solo botón.
+ */
+
+// Iniciamos la sesión para poder recuperar el nombre del cliente atendido
 session_start();
+// Importamos la conexión por si se requiere persistencia en un futuro
 require_once 'conexion.php';
 
+// Filtro de seguridad: Si intentan entrar de forma anónima, los sacamos al index
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit;
 }
 
-// Simulamos o extraemos los últimos datos de la cita consolidada para la factura
+// Simulamos y estructuramos los últimos datos clave para la emisión del comprobante
+// Usamos un rand() para simular un número de comprobante único e inmediato
 $factura_num = "FAC-" . rand(10000, 99999);
-$fecha_emision = date("d/m/Y H:i");
+$fecha_emision = date("d/m/Y H:i"); // Captura la fecha y hora exacta del servidor en tiempo real
 $nombre_cliente = $_SESSION['user_name'] . " " . $_SESSION['user_last'];
 ?>
 <!DOCTYPE html>
@@ -20,12 +35,14 @@ $nombre_cliente = $_SESSION['user_name'] . " " . $_SESSION['user_last'];
     <title>Factura Digital - Barber House</title>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     <style>
+        /* Estilos generales del fondo de pantalla en modo web */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #29030E; font-family: 'Instrument Sans', sans-serif; padding: 50px 20px; display: flex; flex-direction: column; align-items: center; }
         
+        /* Botón interactivo de descarga */
         .btn-download { background-color: #52131E; border: 1px solid #EDC484; color: #EDC484; padding: 12px 30px; font-size: 16px; font-weight: 600; border-radius: 8px; cursor: pointer; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
         
-        /* Contenedor Imprimible de la Factura */
+        /* Contenedor Físico e Imprimible del Ticket de Factura */
         .invoice-box { width: 800px; background-color: #FFFFFF; color: #29030E; padding: 50px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .invoice-header { display: flex; justify-content: space-between; border-bottom: 3px solid #52131E; padding-bottom: 20px; margin-bottom: 30px; }
         
@@ -35,31 +52,36 @@ $nombre_cliente = $_SESSION['user_name'] . " " . $_SESSION['user_last'];
         .client-block { margin-bottom: 30px; font-size: 15px; }
         .client-block h4 { color: #52131E; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-bottom: 5px; }
         
+        /* Estilos de la tabla de ítems consumidos */
         .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .invoice-table th { background-color: #52131E; color: #FFEED5; text-transform: uppercase; font-size: 12px; padding: 12px; text-align: left; }
         .invoice-table td { padding: 15px 12px; border-bottom: 1px solid #E0E0E0; font-size: 14px; }
         
+        /* Bloque inferior de liquidación e impuestos */
         .totals-block { display: flex; flex-direction: column; align-items: flex-end; font-size: 16px; line-height: 2; }
         .totals-block div span { font-weight: 600; color: #52131E; min-width: 120px; display: inline-block; text-align: right; }
 
         /* ========================================================
-           🔥 REGLAS MAESTRAS DE IMPRESIÓN (CSS PARA FORZAR PDF LIMPIO)
+            REGLAS MAESTRAS DE IMPRESIÓN (CSS PARA FORZAR PDF LIMPIO)
            ======================================================== */
         @media print {
+            /* Al mandar a imprimir o guardar como PDF, cambiamos el fondo oscuro por un blanco total */
             body { background: #FFFFFF !important; padding: 0 !important; }
-            .btn-download { display: none !important; } /* Oculta el botón en el PDF */
+            
+            /* Escondemos por completo el botón de descarga para que no ensucie la visual del PDF final */
+            .btn-download { display: none !important; } 
+            
+            /* Expandimos la caja de la factura al 100% quitando bordes y sombras innecesarias en papel */
             .invoice-box { width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Botón de descarga nativa a PDF -->
     <button class="btn-download" onclick="window.print();">
         📥 Descargar Factura en PDF
     </button>
 
-    <!-- Caja de Factura Física Real -->
     <div class="invoice-box">
         <div class="invoice-header">
             <div class="company-details">
