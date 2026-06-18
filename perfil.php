@@ -200,7 +200,7 @@ if ($rol_evaluar === 'cliente') {
                                     <th>Precio</th>
                                     <th>Estado</th>
                                 </tr>
-                            </tbody>
+                            </thead>
                             <tbody>
                                 <?php foreach ($citas as $cita): ?>
                                     <tr>
@@ -252,6 +252,7 @@ if ($rol_evaluar === 'cliente') {
             <div class="header-panel">
                 <h2>Usuarios y Roles</h2>
                 <p>Gestión de Roles</p>
+                <a href="crear_usuario.php" style="display: inline-block; margin-top: 15px; background: #EDC484; color: #52131E; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">+ Nuevo Usuario</a>
             </div>
 
             <div class="search-bar-row">
@@ -299,7 +300,7 @@ if ($rol_evaluar === 'cliente') {
                                 <td><span class="user-name-text"><?php echo htmlspecialchars($u['nombre'] . ' ' . $u['apellido']); ?></span></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($u['correo']); ?></strong>
-                                    <span class="sub-contact">📞 <?php echo htmlspecialchars($u['telefono'] ?? 'S/N'); ?></span>
+                                    <span class="sub-contact">📞 <?php echo !empty($u['telefono']) ? htmlspecialchars($u['telefono']) : 'S/N'; ?></span>
                                 </td>
                                 <td><span class="role-tag <?php echo $clase_badge; ?>"><?php echo $rol_actual; ?></span></td>
                                 <td><span class="status-tag">ACTIVO</span></td>
