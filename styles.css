@@ -1,0 +1,235 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- REGLAS PARA PERSONALIZAR EL TUBO DE EXPLORACIÓN (SCROLLBAR) --- */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #FCF6ED; 
+}
+
+::-webkit-scrollbar-thumb {
+    background: #52131E; 
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #780524; 
+}
+
+body {
+    background-color: #FCF6ED; /* Fondo color crema del lienzo */
+    font-family: 'Instrument Sans', sans-serif;
+    min-height: 100vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    display: flex;
+    width: 100%;
+    max-width: 1440px;
+    height: 100vh;
+    max-height: 1019px;
+    background-color: #FCF6ED;
+    overflow-y: auto; 
+    position: relative;
+}
+
+/* --- COLUMNA IZQUIERDA --- */
+.form-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.form-content {
+    width: 100%;
+    max-width: 551px; /* Ancho exacto de tus bloques de diseño */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    max-width: 100%;
+    height: auto;
+    margin-top: 40px;    
+    margin-bottom: 20px; 
+}
+
+.main-title {
+    font-family: 'Sawarabi Mincho', serif;
+    font-size: 40px;
+    font-weight: 400;
+    color: #52131E; /* Color vino oscuro del título */
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+form {
+    width: 100%;
+}
+
+.input-group {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 20px;
+    color: #231918;
+    margin-bottom: 10px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.input-group input {
+    width: 100%;
+    height: 70px;
+    background-color: #780524; /* Fondo vino de las cajas */
+    border: none;
+    border-radius: 40px;
+    padding: 0 35px;
+    font-size: 22px;
+    color: #EDC484; /* Color del texto que se escribe */
+    font-family: 'Instrument Sans', sans-serif;
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: rgba(237, 196, 132, 0.6); 
+}
+
+.forgot-container {
+    width: 100%;
+    text-align: right; 
+    margin-top: -10px;
+    margin-bottom: 35px;
+    padding-right: 15px;
+}
+
+.forgot-link {
+    font-size: 16px;
+    color: #231918;
+    text-decoration: none;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+/* Botón Ingresar */
+.btn-submit {
+    width: 325px;
+    height: 70px;
+    background-color: #52131E;
+    color: #EDC484;
+    border: none;
+    border-radius: 40px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto 35px auto;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: #3d0e16;
+    transform: translateY(-1px);
+}
+
+/* Divisor ACCEDER CON */
+.divider {
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid rgba(35, 25, 24, 0.15);
+    line-height: 0.1em;
+    margin: 15px 0 30px 0;
+}
+
+.divider span {
+    background: #FCF6ED;
+    padding: 0 20px;
+    font-size: 18px;
+    color: #231918;
+    font-weight: 500;
+}
+
+/* Botón de Google */
+.btn-google {
+    width: 321px;
+    height: 61px;
+    background-color: rgba(120, 26, 43, 0.15); 
+    border: 1px solid #322B2B;
+    border-radius: 40px;
+    color: #231918;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    margin-bottom: 35px;
+    transition: all 0.3s ease;
+}
+
+.btn-google:hover {
+    background-color: rgba(120, 26, 43, 0.25);
+}
+
+.google-icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* Texto de términos al pie */
+.terms-text {
+    font-size: 14px;
+    color: #231918;
+    text-align: center;
+    max-width: 400px;
+    line-height: 1.4;
+    opacity: 0.9;
+}
+
+/* --- COLUMNA DERECHA (IMAGEN FIJA) --- */
+.image-section {
+    width: 783px; 
+    height: 100vh;
+    background-image: url('imagenes/barber-image.png'); /* <-- Ruta actualizada a la carpeta imagenes */
+    background-size: cover;
+    background-position: center;
+    position: sticky;
+    top: 0;
+}
+
+.linear-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
+    pointer-events: none;
+}
+
+@media (max-width: 1100px) {
+    .image-section {
+        display: none; 
+    }
+}
