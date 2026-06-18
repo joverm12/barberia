@@ -1,5 +1,17 @@
 <?php
+/**
+ * ARCHIVO: perfil_trabajador.php
+ * DESCRIPCIÓN: 
+ * Este script administra el panel operativo y la agenda diaria para el personal 
+ * técnico de Barber House (Barberos, Estilistas, Manicuristas y Maquilladores). 
+ * Controla el acceso mediante un array de exclusividad de roles, recupera las citas 
+ * del día asignadas al empleado, e incluye un sistema interactivo con ventanas modales 
+ * para iniciar la atención capturando requerimientos específicos del cliente.
+ */
+
+// Iniciamos la sesión para evaluar la identidad del usuario logeado
 session_start();
+// Importamos la conexión centralizada a la base de datos
 require_once 'conexion.php';
 
 // Definimos la lista de roles autorizados para usar esta agenda de trabajo
@@ -11,12 +23,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_rol'], $roles_perm
     exit;
 }
 
+// Extraemos los datos de contexto del empleado activo
 $id_usuario = $_SESSION['user_id'];
 $nombre_trabajador = $_SESSION['user_name'];
 $apellido_trabajador = $_SESSION['user_last'];
 $rol_trabajador = $_SESSION['user_rol']; // Guarda dinámicamente el rol actual
 
-// 1. Obtener el id_empleado y el nombre de su sucursal
+// 1. Obtener el id_empleado y el nombre de su sucursal correspondiente mediante un JOIN
 $stmtEmp = $pdo->prepare("
     SELECT e.id_empleado, s.nombre AS nombre_sucursal 
     FROM empleado e 
@@ -29,7 +42,7 @@ $empleado = $stmtEmp->fetch();
 $id_empleado = $empleado['id_empleado'] ?? 0;
 $sucursal_nombre = $empleado['nombre_sucursal'] ?? 'No asignada';
 
-// 2. Traer las citas del trabajador logeado organizadas para el día de hoy
+// 2. Traer las citas del trabajador logeado organizadas para el día de hoy en orden cronológico
 $sqlCitas = "
     SELECT 
         c.id_cita,
@@ -51,10 +64,10 @@ $stmtCitas = $pdo->prepare($sqlCitas);
 $stmtCitas->execute([$id_empleado]);
 $citas = $stmtCitas->fetchAll();
 
-// Total de citas para el contador dinámico
+// Total de citas asignadas para alimentar el contador dinámico de la interfaz
 $total_citas = count($citas);
 
-// Configuración de fecha en español idéntica a tu Figma
+// Configuración de fecha local en español idéntica a tu Figma
 setlocale(LC_TIME, 'es_ES.UTF-8', 'esp');
 $fecha_actual = strftime("%A, %d  %b  %Y");
 ?>
@@ -69,6 +82,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Sawarabi+Mincho&display=swap" rel="stylesheet">
     
     <style>
+        /* Ajustes y reseteo básico de márgenes */
         * {
             margin: 0;
             padding: 0;
@@ -76,17 +90,18 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         }
 
         body {
-            background-color: #420516; /* Tu Degradado Lineal Oscuro Base de Figma */
+            /* Degradado Premium Lineal Oscuro de Barber House */
+            background-color: #420516; 
             background: linear-gradient(180deg, #420516 0%, #29030E 100%);
             font-family: 'Instrument Sans', sans-serif;
-            color: #FFEED5; /* Tu color crema claro de fuentes */
+            color: #FFEED5; /* Color crema claro para textos legibles */
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        /* --- NAVBAR SUPERIOR --- */
+        /* --- NAVBAR SUPERIOR OPERATIVA --- */
         .navbar {
-            background-color: #52131E; /* Tu color vino oficial */
+            background-color: #52131E; /* Color vino oficial */
             width: 100%;
             height: 109px;
             display: flex;
@@ -118,7 +133,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         }
 
         .nav-links a:hover {
-            color: #EDC484; /* Tu dorado */
+            color: #EDC484; /* Acento dorado */
         }
 
         .nav-user-zone {
@@ -145,7 +160,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             cursor: pointer;
         }
 
-        /* --- MENÚ DESPLEGABLE FLOTANTE --- */
+        /* --- MENÚ DESPLEGABLE DE SESIÓN --- */
         .dropdown-menu {
             position: absolute;
             top: 120%;
@@ -179,7 +194,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             color: #EDC484;
         }
 
-        /* --- CONTENEDOR PRINCIPAL --- */
+        /* --- CONTENEDOR CENTRAL DE LA INTERFAZ --- */
         .main-container {
             max-width: 1400px;
             margin: 40px auto;
@@ -200,6 +215,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             gap: 20px;
         }
 
+        /* Avatar dinámico con inicial */
         .avatar-circle {
             width: 65px;
             height: 65px;
@@ -229,11 +245,12 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         }
 
         .barbero-text span {
-            color: #EA4335;
+            color: #2E7D32; /* Punto verde de activo */
             font-size: 18px;
             margin-right: 5px;
         }
 
+        /* Tarjeta informativa de la fecha actual */
         .fecha-card {
             background-color: #231918;
             border: 1px solid rgba(237, 196, 132, 0.15);
@@ -256,7 +273,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             font-size: 18px;
         }
 
-        /* --- TABLA DE CITAS --- */
+        /* --- CONTENEDOR DE LA GRILLA DE TURNOS --- */
         .agenda-card {
             background-color: #231918;
             border-radius: 25px;
@@ -326,6 +343,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             margin-top: 4px;
         }
 
+        /* Estilos específicos de Badges para los estados de atención */
         .badge-status {
             display: inline-block;
             padding: 6px 14px;
@@ -345,7 +363,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         .badge-status.pendiente {
             background-color: rgba(245, 124, 0, 0.15);
             color: #FFB74D;
-            border: 1px solid #F57C00;
+            border: 1px solid #780524;
         }
 
         .badge-status.en_proceso {
@@ -354,7 +372,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             border: 1px solid #2196F3;
         }
 
-        /* BOTONES ACCIONES */
+        /* Botones de acción del flujo operativo */
         .btn-action {
             padding: 10px 20px;
             border-radius: 12px;
@@ -401,7 +419,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             font-style: italic;
         }
 
-        /* --- VENTANA MODAL (EMERGENTE FIEL A FIGMA) --- */
+        /* --- VENTANA MODAL EMERGENTE DE CONFIRMACIÓN (ESTILO FIGMA) --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -487,6 +505,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             color: #FFFFFF;
         }
 
+        /* Caja de observaciones iniciales del corte */
         .obs-textarea {
             width: 100%;
             height: 80px;
@@ -497,6 +516,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             padding: 10px;
             font-family: 'Instrument Sans', sans-serif;
             font-size: 14px;
+            box-shadow: none;
             resize: none;
             margin-top: 5px;
         }
@@ -543,6 +563,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
 </head>
 <body>
 
+    <!-- Menú de Control Operativo del Empleado -->
     <nav class="navbar">
         <div class="nav-logo">
             <img src="imagenes/logo.png" alt="Barber House">
@@ -570,10 +591,12 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         </div>
     </nav>
 
+    <!-- Cuerpo Principal del Dashboard -->
     <div class="main-container">
         
         <div class="agenda-header">
             <div class="barbero-info">
+                <!-- Inicial del nombre del profesional activo como avatar -->
                 <div class="avatar-circle"><?php echo substr($nombre_trabajador, 0, 1); ?></div>
                 <div class="barbero-text">
                     <h1>Agenda: <?php echo htmlspecialchars($nombre_trabajador . ' ' . $apellido_trabajador); ?></h1>
@@ -593,6 +616,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
                 <div class="citas-counter">Total: <?php echo $total_citas; ?> Citas</div>
             </div>
 
+            <!-- Evaluación de la existencia de turnos en el arreglo -->
             <?php if ($total_citas > 0): ?>
                 <table class="table-agenda">
                     <thead>
@@ -605,7 +629,9 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Bucle Maestro: Aquí recorremos e imprimimos de forma estricta cada cita de la BD -->
                         <?php foreach ($citas as $cita): 
+                            // Sanitizamos y normalizamos el estado para mapear las clases CSS del badge
                             $status_clean = strtoupper($cita['estado']);
                             $status_class = 'pendiente';
                             
@@ -616,6 +642,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
                             }
                         ?>
                             <tr>
+                                <!-- Estimación cronológica: Bloques de atención fijos de 45 minutos -->
                                 <td class="time-col">
                                     <?php echo date("H:i", strtotime($cita['hora'])); ?> - 
                                     <?php echo date("H:i", strtotime($cita['hora'] . " + 45 minutes")); ?>
@@ -633,12 +660,15 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
                                     </span>
                                 </td>
                                 <td>
+                                    <!-- Renderizado condicional de acciones basado exclusivamente en el progreso del estado -->
                                     <?php if ($status_clean === 'PENDIENTE (EN SALA)' || $status_clean === 'PENDIENTE'): ?>
+                                        <!-- Dispara la ventana modal inyectando los datos de la fila de forma dinámica -->
                                         <button type="button" class="btn-action btn-start" 
                                                 onclick="openAttentionModal('<?php echo $cita['id_cita']; ?>', '<?php echo htmlspecialchars($cita['cli_nombre'] . ' ' . $cita['cli_apellido']); ?>', '<?php echo htmlspecialchars($cita['servicio_nombre']); ?>')">
                                             Iniciar Atención
                                         </button>
                                     <?php elseif ($status_clean === 'EN PROCESO'): ?>
+                                        <!-- Enrutamiento directo al script de actualización de estado para concluir la cita -->
                                         <a href="cambiar_estado.php?id=<?php echo $cita['id_cita']; ?>&nuevo=finalizar" class="btn-action btn-finish">✓ Finalizar Servicio</a>
                                     <?php else: ?>
                                         <span class="no-actions">Sin acciones</span>
@@ -649,18 +679,21 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
                     </tbody>
                 </table>
             <?php else: ?>
+                <!-- Si el array de la BD llegó vacío, desplegamos este aviso de cortesía -->
                 <p class="no-data-msg">No tienes citas agendadas asignadas para el día de hoy.</p>
             <?php endif; ?>
 
         </div>
     </div>
 
+    <!-- WINDOWS MODAL DE INTERVENCIÓN OPERATIVA -->
     <div class="modal-overlay" id="attentionModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Confirmar Inicio de Cita</h3>
                 <button class="close-modal-btn" onclick="closeAttentionModal()">&times;</button>
             </div>
+            <!-- Transmite las variables capturadas hacia el controlador 'cambiar_estado.php' mediante GET -->
             <form action="cambiar_estado.php" method="GET">
                 <input type="hidden" name="id" id="modalCitaId">
                 <input type="hidden" name="nuevo" value="proceso">
@@ -687,8 +720,9 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
         </div>
     </div>
 
+    <!-- Scripts de comportamiento interactivo para menús desplegables y modales -->
     <script>
-        // === LÓGICA DEL BOTÓN DESPLEGABLE DE USUARIO ===
+        // === Comportamiento del Dropdown de Perfil ===
         const dropdownBtn = document.getElementById('dropdownBtn');
         const dropdownMenu = document.getElementById('dropdownMenu');
 
@@ -703,12 +737,13 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             }
         });
 
-        // === LÓGICA DE LA VENTANA EMERGENTE (MODAL) ===
+        // === Gestión y Mapeo Dinámico de la Ventana Modal ===
         const attentionModal = document.getElementById('attentionModal');
         const modalCitaId = document.getElementById('modalCitaId');
         const modalClienteName = document.getElementById('modalClienteName');
         const modalServicioName = document.getElementById('modalServicioName');
 
+        // Captura los parámetros de la fila seleccionada y los inyecta en los nodos del modal antes de abrirlo
         function openAttentionModal(idCita, nombreCliente, nombreServicio) {
             modalCitaId.value = idCita;
             modalClienteName.innerText = nombreCliente;
@@ -720,6 +755,7 @@ $fecha_actual = strftime("%A, %d  %b  %Y");
             attentionModal.classList.remove('show');
         }
 
+        // Cierra el modal si el profesional hace clic fuera del recuadro de contenido
         attentionModal.addEventListener('click', function(e) {
             if (e.target === attentionModal) {
                 closeAttentionModal();
