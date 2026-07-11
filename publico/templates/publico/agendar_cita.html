@@ -1,0 +1,224 @@
+{% extends 'publico/base_publico.html' %}
+{% block title %}Agendar Cita — Barber House{% endblock %}
+
+{% block content %}
+<div style="min-height:90vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  background:linear-gradient(rgba(50,5,15,.75),rgba(50,5,15,.95)),url('/static/images/hero-bg.jpg') center/cover fixed">
+
+  <div style="background:rgba(245,240,230,.97);color:#222;border-radius:14px;width:100%;max-width:900px;
+    display:grid;grid-template-columns:1fr 300px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4)">
+
+    <!-- FORMULARIO -->
+    <div style="padding:32px">
+      <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:24px;color:#3d0010">Detalle de la Cita</h2>
+      <form method="post" action="{% url 'confirmar_cita' %}" id="form-agendar">
+        {% csrf_token %}
+
+        <!-- SUCURSAL -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">SUCURSAL *</div>
+          <select name="sucursal" id="ag-sucursal" onchange="actualizarResumen();cargarEmpleados()" required
+            style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);background:#fff;font-size:.88rem">
+            <option value="">Selecciona una sucursal</option>
+            {% for s in sucursales %}
+            <option value="{{ s.id_sucursal }}">{{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- SERVICIO + PROFESIONAL -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">SERVICIO PRINCIPAL *</div>
+            <select name="servicio" id="ag-servicio" onchange="calcularTotal()" required
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);background:#fff;font-size:.88rem">
+              <option value="">— Seleccione servicio —</option>
+              {% for sv in servicios %}
+              <option value="{{ sv.id_servicio }}" data-precio="{{ sv.precio }}" data-dur="{{ sv.duracion }}">
+                {{ sv.nombre }} (${{ sv.precio }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">PROFESIONAL DISPONIBLE *</div>
+            <select name="empleado" id="ag-empleado" onchange="actualizarResumen()" required
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);background:#fff;font-size:.88rem">
+              <option value="">Selecciona el profesional</option>
+              {% for e in empleados %}
+              <option value="{{ e.id_empleado }}">{{ e.usuario.nombre }} {{ e.usuario.apellido }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- COMPLEMENTARIOS -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">SERVICIOS COMPLEMENTARIOS (OPCIONAL)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            {% for c in complementarios %}
+            <label style="background:#fff;border:1px solid rgba(100,0,30,.2);border-radius:8px;padding:10px 12px;font-size:.82rem;display:flex;gap:8px;align-items:flex-start;cursor:pointer">
+              <input type="checkbox" name="complementarios" value="{{ c.id_complementario }}"
+                     data-precio="{{ c.precio }}" data-dur="{{ c.duracion_extra }}"
+                     onchange="calcularTotal()" style="accent-color:#780524;margin-top:2px">
+              {{ c.nombre }} (+{{ c.duracion_extra }} min / +${{ c.precio }})
+            </label>
+            {% empty %}
+            <p style="color:#888;font-size:.82rem;grid-column:1/-1">No hay servicios complementarios disponibles.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- FECHA Y HORA -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">FECHA DE LA CITA *</div>
+            <input type="date" name="fecha" id="ag-fecha" onchange="actualizarResumen()" required
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);background:#fff;font-size:.88rem">
+          </div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">HORA DE ATENCIÓN *</div>
+            <select name="hora" id="ag-hora" onchange="actualizarResumen()" required
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);background:#fff;font-size:.88rem">
+              <option value="">Selecciona horario</option>
+              <option value="09:00">09:00 AM</option><option value="09:30">09:30 AM</option>
+              <option value="10:00">10:00 AM</option><option value="10:30">10:30 AM</option>
+              <option value="11:00">11:00 AM</option><option value="11:30">11:30 AM</option>
+              <option value="12:00">12:00 PM</option><option value="14:00">02:00 PM</option>
+              <option value="14:30">02:30 PM</option><option value="15:00">03:00 PM</option>
+              <option value="15:30">03:30 PM</option><option value="16:00">04:00 PM</option>
+              <option value="17:00">05:00 PM</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- OBSERVACIONES -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:6px">OBSERVACIONES (OPCIONAL)</div>
+          <textarea name="observaciones" rows="3" placeholder="¿Tienes alguna preferencia en especial?"
+            style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid rgba(100,0,30,.25);font-family:inherit;font-size:.85rem;resize:vertical"></textarea>
+        </div>
+
+        <button type="submit"
+          style="background:#5a0018;color:#fff;border:none;padding:14px;border-radius:8px;font-size:.9rem;font-weight:700;letter-spacing:.05em;cursor:pointer;width:100%">
+          CONFIRMAR Y AGENDAR
+        </button>
+      </form>
+    </div>
+
+    <!-- RESUMEN -->
+    <div style="background:#f5f0e8;border-left:1px solid rgba(100,0,30,.15);padding:28px 22px">
+      <h3 style="font-size:1rem;font-weight:700;color:#3d0010;margin-bottom:20px">Resumen del Servicio</h3>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:2px">Servicio Principal</div>
+        <div id="res-servicio" style="font-size:.85rem;color:#444">—</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:2px">Servicios Comp:</div>
+        <div id="res-comps" style="font-size:.85rem;color:#444">—</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:2px">Sucursal</div>
+        <div id="res-sucursal" style="font-size:.85rem;color:#444">—</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:2px">Profesional</div>
+        <div id="res-profesional" style="font-size:.85rem;color:#444">—</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;margin-bottom:2px">Duración Total</div>
+        <div id="res-duracion" style="font-size:.85rem;color:#444">—</div>
+      </div>
+
+      <div style="margin-top:24px;padding-top:14px;border-top:1px solid rgba(100,0,30,.2)">
+        <div style="display:flex;justify-content:space-between;font-size:.85rem;color:#555;margin-bottom:4px">
+          <span>Subtotal:</span><span id="res-subtotal">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.85rem;color:#555;margin-bottom:8px">
+          <span>IVA ({{ iva_porcentaje }}%):</span><span id="res-iva">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:700;color:#3d0010">
+          <span>Total a Pagar:</span><span id="res-total">$0.00</span>
+        </div>
+        <p style="font-size:.72rem;color:#888;line-height:1.5;margin-top:4px">
+          * El pago se registrará en la recepción del local.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{{ iva_porcentaje|json_script:"iva-data" }}
+<script>
+
+
+const IVA = JSON.parse(document.getElementById('iva-data').textContent);
+
+function calcularTotal() {
+  let subtotal = 0, duracion = 0;
+  const svSel = document.getElementById('ag-servicio');
+  const svOpt = svSel.options[svSel.selectedIndex];
+  if (svOpt && svOpt.dataset.precio) {
+    subtotal += parseFloat(svOpt.dataset.precio);
+    duracion += parseInt(svOpt.dataset.dur || 0);
+    document.getElementById('res-servicio').textContent = svOpt.text.split('(')[0].trim();
+  } else {
+    document.getElementById('res-servicio').textContent = '—';
+  }
+  const comps = [];
+  document.querySelectorAll('input[name="complementarios"]:checked').forEach(cb => {
+    subtotal += parseFloat(cb.dataset.precio || 0);
+    duracion += parseInt(cb.dataset.dur || 0);
+    comps.push(cb.closest('label').textContent.trim().split('(')[0].trim());
+  });
+  document.getElementById('res-comps').textContent    = comps.length ? comps.join(', ') : '—';
+  document.getElementById('res-duracion').textContent = duracion ? duracion + ' min' : '—';
+
+  const iva   = subtotal * IVA / 100;
+  const total = subtotal + iva;
+  document.getElementById('res-subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('res-iva').textContent      = '$' + iva.toFixed(2);
+  document.getElementById('res-total').textContent    = '$' + total.toFixed(2);
+}
+
+function actualizarResumen() {
+  calcularTotal();
+  const sucSel = document.getElementById('ag-sucursal');
+  const empSel = document.getElementById('ag-empleado');
+  if (sucSel.selectedIndex > 0)
+    document.getElementById('res-sucursal').textContent = sucSel.options[sucSel.selectedIndex].text;
+  if (empSel.selectedIndex > 0)
+    document.getElementById('res-profesional').textContent = empSel.options[empSel.selectedIndex].text;
+}
+
+// Carga empleados según sucursal seleccionada dinámicamente
+const URL_API_EMPLEADOS = "{% url 'api_empleados' %}";
+
+    function cargarEmpleados() {
+        const sucursalId = document.getElementById('ag-sucursal').value;
+        const select = document.getElementById('ag-empleado');
+        
+        if (!sucursalId) {
+            select.innerHTML = '<option value="">Selecciona el profesional</option>';
+            return;
+        }
+
+        select.innerHTML = '<option value="">Cargando...</option>';
+
+        // Usa la variable que generaste con Django
+        fetch(URL_API_EMPLEADOS + '?sucursal_id=' + sucursalId)
+            .then(r => r.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Selecciona el profesional</option>';
+                data.forEach(e => {
+                    select.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+                });
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                select.innerHTML = '<option value="">Error al cargar</option>';
+            });
+    }
+</script>
+{% endblock %}

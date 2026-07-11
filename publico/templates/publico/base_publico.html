@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Barber House{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/publico.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo">
+    <a href="{% url 'inicio' %}">
+      <img src="{% static 'images/logo.png' %}" alt="Barber House">
+    </a>
+  </div>
+  <ul class="nav-links">
+    <li><a href="{% url 'inicio' %}"    class="{% block nav_inicio %}{% endblock %}">Inicio</a></li>
+    <li><a href="{% url 'servicios' %}" class="{% block nav_servicios %}{% endblock %}">Servicios</a></li>
+    <li><a href="{% url 'sucursales' %}" class="{% block nav_sucursales %}{% endblock %}">Sucursales</a></li>
+    <li><a href="{% url 'trabaja' %}"   class="{% block nav_trabaja %}{% endblock %}">Trabaja con nosotros</a></li>
+  </ul>
+  <div class="nav-auth">
+    {% if request.session.rol %}
+      <div class="user-dropdown">
+        <button class="nav-user-btn">👤 Usuario: {{ request.session.nombre }} ▲</button>
+        <div class="user-dropdown-content">
+          {% if request.session.rol == 'Cliente' %}
+            <a href="{% url 'perfil_cliente' %}">Perfil</a>
+          {% elif request.session.rol == 'Administrador' %}
+            <a href="{% url 'admin_dashboard' %}">Panel Admin</a>
+          {% else %}
+            <a href="{% url 'agenda_empleado' %}">Mis Citas</a>
+          {% endif %}
+          <a href="{% url 'logout' %}">Cerrar Sesión</a>
+        </div>
+      </div>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn-iniciar-sesion">INICIAR SESIÓN 👤</a>
+    {% endif %}
+    <a href="{% url 'agendar_cita' %}" class="btn-agendar-nav">AGENDAR CITA</a>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <h3>BARBER HOUSE</h3>
+      <p>Transforma tu estilo, realiza tu confianza; porque cada detalle cuenta en tu imagen.</p>
+      <div class="footer-social">
+        <a href="#">📘</a><a href="#">📸</a><a href="#">🐦</a><a href="#">💼</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Contact us</a>
+      <a href="#">Support</a>
+      <a href="{% url 'trabaja' %}">Careers</a>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Link</h4>
+      <a href="#">Share Location</a>
+      <a href="#">Orders Tracking</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Terms &amp; conditions</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">FAQs</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Dropdown nav usuario
+  document.querySelectorAll('.user-dropdown').forEach(d => {
+    d.querySelector('.nav-user-btn').addEventListener('click', () => {
+      d.querySelector('.user-dropdown-content').classList.toggle('show');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.user-dropdown')) {
+      document.querySelectorAll('.user-dropdown-content').forEach(el => el.classList.remove('show'));
+    }
+  });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

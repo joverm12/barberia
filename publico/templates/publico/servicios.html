@@ -1,0 +1,117 @@
+{% extends 'publico/base_publico.html' %}
+{% load static %}
+{% block title %}Servicios — Barber House{% endblock %}
+{% block nav_servicios %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <h1>Catálogo de Servicios</h1>
+  <p>Cuidado de primer nivel e higiene con garantía para resultados impecables.</p>
+</div>
+
+<div class="filtros-bar">
+  <input type="text" placeholder="🔍 Buscar servicios..." id="buscar-srv" onkeyup="filtrarServicios()">
+  <button class="filtro-btn active" onclick="filtrarCat(this,'todos')">TODOS LOS SERVICIOS</button>
+  <button class="filtro-btn" onclick="filtrarCat(this,'barberia')">BARBERÍA</button>
+  <button class="filtro-btn" onclick="filtrarCat(this,'estetica')">ESTÉTICA</button>
+  <button class="filtro-btn" onclick="filtrarCat(this,'pedicura')">PEDICURA</button>
+  <button class="filtro-btn" onclick="filtrarCat(this,'packs')">PACKS / COMBOS</button>
+</div>
+
+<!-- BARBERÍA CLÁSICA -->
+{% if barberia %}
+<div class="categoria-bloque" id="cat-barberia" data-cat="barberia">
+  <h2>Barbería Clásica</h2>
+  <div class="servicios-lista">
+    {% for sv in barberia %}
+    <div class="servicio-item">
+      <div class="servicio-item-img">✂️</div>
+      <div class="servicio-item-info">
+        <h3>{{ sv.nombre }} <span style="float:right;color:var(--gold)">${{ sv.precio }}</span></h3>
+        <div class="s-dur">Duración: {{ sv.duracion }} minutos</div>
+        <p>{{ sv.descripcion|default:"Servicio de primera calidad." }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="categoria-bloque" id="cat-barberia" data-cat="barberia">
+  <h2>Barbería Clásica</h2>
+  <div class="servicios-lista">
+    <p style="color: white; padding: 20px;">Por el momento no hay servicios de barbería configurados por el administrador.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- ESTÉTICA -->
+{% if estetica %}
+<div class="categoria-bloque" id="cat-estetica" data-cat="estetica">
+  <h2>Estilismo y Color</h2>
+  <div class="servicios-lista">
+    {% for sv in estetica %}
+    <div class="servicio-item">
+      <div class="servicio-item-img">⭐</div>
+      <div class="servicio-item-info">
+        <h3>{{ sv.nombre }} <span style="float:right;color:var(--gold)">${{ sv.precio }}</span></h3>
+        <div class="s-dur">Duración: {{ sv.duracion }} minutos</div>
+        <p>{{ sv.descripcion|default:"Servicio estético de alta calidad." }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- COMPLEMENTARIOS -->
+{% if complementarios %}
+<div class="categoria-bloque">
+  <h2>Servicios Complementarios</h2>
+  <div class="complementarios-grid" style="padding:0">
+    {% for c in complementarios %}
+    <div class="comp-card">
+      <h4>{{ c.nombre }}</h4>
+      <div class="comp-price">+${{ c.precio }}</div>
+      <div class="comp-dur">+{{ c.duracion_extra }} min</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- PACKS -->
+{% if packs %}
+<div class="categoria-bloque" id="cat-packs" data-cat="packs">
+  <h2>Paquetes Premium</h2>
+  <div class="servicios-lista">
+    {% for p in packs %}
+    <div class="servicio-item">
+      <div class="servicio-item-img">📦</div>
+      <div class="servicio-item-info">
+        <h3>{{ p.nombre }} <span style="float:right;color:var(--gold)">${{ p.precio }}</span></h3>
+        <div class="s-dur">Duración: {{ p.duracion }} minutos</div>
+        <p>{{ p.descripcion|default:"Pack premium." }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<script>
+function filtrarServicios() {
+  const q = document.getElementById('buscar-srv').value.toLowerCase();
+  document.querySelectorAll('.servicio-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function filtrarCat(btn, cat) {
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.categoria-bloque').forEach(bl => {
+    bl.style.display = (cat === 'todos' || bl.dataset.cat === cat) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

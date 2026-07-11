@@ -1,0 +1,156 @@
+{% extends 'publico/base_publico.html' %}
+{% block title %}Trabaja con Nosotros — Barber House{% endblock %}
+{% block nav_trabaja %}active{% endblock %}
+
+{% block content %}
+
+{% if enviado %}
+<div style="text-align:center;padding:60px 20px">
+  <div style="font-size:3rem;margin-bottom:16px">✅</div>
+  <h2 style="font-size:1.4rem;margin-bottom:8px">¡Postulación enviada!</h2>
+  <p style="color:rgba(252,246,237,.7)">Te contactaremos pronto. Gracias por tu interés en unirte a Barber House.</p>
+  <a href="{% url 'inicio' %}" class="btn-hero" style="margin-top:24px;display:inline-block">Volver al Inicio</a>
+</div>
+{% else %}
+
+<!-- HERO -->
+<div class="trabaja-hero">
+  <div>
+    <h1>Transforma tu<br>talento en arte.</h1>
+    <h2>¡Únete a nuestro equipo!</h2>
+    <blockquote>"En The Barber House no solo cortamos cabello; creamos experiencias. Si tienes pasión por la estética, atención al detalle y ganas de crecer, estamos buscándote."</blockquote>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;font-size:8rem;opacity:.3">✂️</div>
+</div>
+
+<!-- BENEFICIOS -->
+<div class="section" style="padding-bottom:20px">
+  <p class="section-title">¿Por qué unirse a The Barber House?</p>
+  <div class="beneficios-grid">
+    <div class="beneficio-card">
+      <div class="beneficio-icon">📚</div>
+      <h3>Desarrollo Continuo</h3>
+      <p>Acceso a capacitaciones mensuales sobre las últimas tendencias mundiales en técnicas de corte, afeitado clásico y colorimetría.</p>
+    </div>
+    <div class="beneficio-card">
+      <div class="beneficio-icon">👥</div>
+      <h3>Formación Compañerismo</h3>
+      <p>Ambiente de trabajo compañerismo, respeto y pasión, trabajamos con el mismo objetivo: clientes fieles y amigables.</p>
+    </div>
+    <div class="beneficio-card">
+      <div class="beneficio-icon">💰</div>
+      <h3>Comisiones Atractivas</h3>
+      <p>Ofrecemos uno de los mejores esquemas de comisiones por servicios realizados y venta de productos exclusivos del sector.</p>
+    </div>
+  </div>
+</div>
+
+<!-- VACANTES -->
+<div class="vacantes-section">
+  <p class="section-title" style="text-align:left;font-size:1.4rem">Posiciones disponibles</p>
+  <p style="color:rgba(252,246,237,.6);font-size:.82rem;margin-bottom:16px">Encuentra la sucursal y el puesto ideal para ti</p>
+  <div class="vacantes-filtros">
+    <div style="position:relative">
+      <input type="text" id="buscar-vacante" placeholder="🔍 ciudad..." onkeyup="filtrarVacantes()" style="padding-left:32px">
+    </div>
+    <select id="filtro-cat" onchange="filtrarVacantes()">
+      <option value="">Todas las categorías</option>
+      <option>Barbero</option>
+      <option>Recepcionista</option>
+      <option>Estilista</option>
+    </select>
+  </div>
+  <div class="vacantes-grid" id="vacantes-lista">
+    <div class="vacante-card" data-cat="Barbero" data-ciudad="quito">
+      <div class="vacante-tipo">⏱ TIEMPO COMPLETO · Quito Norte</div>
+      <h3>Barbero Profesional / Senior</h3>
+      <p>Buscamos un barbero con mínimo 2 años de experiencia comprobable en cortes modernos, afeitado tradicional a navaja y asesoría de imagen...</p>
+      <button class="btn-aplicar" onclick="document.getElementById('form-postulacion').scrollIntoView({behavior:'smooth'})">APLICAR AHORA</button>
+    </div>
+    <div class="vacante-card" data-cat="Recepcionista" data-ciudad="manta">
+      <div class="vacante-tipo">⏱ TIEMPO PARCIAL · Guayaquil / Samborondón</div>
+      <h3>Asistente de Recepción y Ventas</h3>
+      <p>Persona encargada del agendamiento, cobros, atención al cliente de primer nivel y control de inventario básico para nuestros productos premium.</p>
+      <button class="btn-aplicar" onclick="document.getElementById('form-postulacion').scrollIntoView({behavior:'smooth'})">APLICAR AHORA</button>
+    </div>
+    <div class="vacante-card" data-cat="Estilista" data-ciudad="manta">
+      <div class="vacante-tipo">⏱ TIEMPO COMPLETO · Manta Centro</div>
+      <h3>Esteticista / Especialista en Manos</h3>
+      <p>Buscamos profesionales con experiencia en servicios de manicura y pedicura masculina tradicional, exfoliaciones faciales y diseño básico...</p>
+      <button class="btn-aplicar" onclick="document.getElementById('form-postulacion').scrollIntoView({behavior:'smooth'})">APLICAR AHORA</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULARIO POSTULACIÓN -->
+<div class="postulacion-form-wrap" id="form-postulacion">
+  <div class="form-postulacion">
+    <h2>Postulación Directa</h2>
+    <form method="post" action="{% url 'postular' %}">
+      {% csrf_token %}
+      <div class="fp-grid">
+        <div class="fp-group">
+          <label>Puesto al que aplica **</label>
+          <select name="puesto_aplica">
+            <option value="">Barbero...</option>
+            <option>Barbero Profesional / Senior</option>
+            <option>Asistente de Recepción y Ventas</option>
+            <option>Esteticista / Especialista en Manos</option>
+            <option>Peluquero</option>
+          </select>
+        </div>
+        <div class="fp-group">
+          <label>Sucursal de Interés **</label>
+          <select name="sucursal_interes">
+            {% for s in sucursales %}<option value="{{ s.id_sucursal }}">{{ s.nombre }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="fp-group">
+          <label>Nombre</label>
+          <input type="text" name="nombre_candidato" placeholder="Nombre completo" required>
+        </div>
+        <div class="fp-group">
+          <label>Correo</label>
+          <input type="email" name="correo_candidato" placeholder="Ingrese su correo..." required>
+        </div>
+        <div class="fp-group">
+          <label>Teléfono</label>
+          <input type="text" name="telefono_contacto" placeholder="Ingrese su teléfono..." required>
+        </div>
+        <div class="fp-group">
+          <label>Portafolio (Instagram)</label>
+          <input type="text" name="portafolio_instagram" placeholder="@tuusuario">
+        </div>
+        <div class="fp-group fp-full">
+          <label>¿Cuéntanos por qué quieres ser parte de Barber House?</label>
+          <textarea name="motivacion" placeholder="Compártenos tus habilidades, tu trayectoria profesional..."></textarea>
+        </div>
+        <div class="fp-group fp-full">
+          <label>Adjuntar Hoja de Vida/CV</label>
+          <input type="hidden" name="cv_url" value="pendiente">
+          <div class="drop-zone">
+            <div style="font-size:2rem;margin-bottom:8px">📤</div>
+            <p>Arrastra tu CV aquí o <span style="color:#5a0018;text-decoration:underline">búscalo en tus archivos</span></p>
+            <small>Soporta PDF, Word (.doc, .docx) de hasta 5MB</small>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-enviar-postulacion">ENVIAR MI POSTULACIÓN</button>
+    </form>
+  </div>
+</div>
+
+{% endif %}
+
+<script>
+function filtrarVacantes() {
+  const q   = document.getElementById('buscar-vacante').value.toLowerCase();
+  const cat = document.getElementById('filtro-cat').value;
+  document.querySelectorAll('.vacante-card').forEach(c => {
+    const matchQ   = c.textContent.toLowerCase().includes(q);
+    const matchCat = !cat || c.dataset.cat === cat;
+    c.style.display = (matchQ && matchCat) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'publico/base_publico.html' %}
+{% load static %}
+{% block title %}Barber House — Tu Estilo, Nuestra Pasión{% endblock %}
+{% block nav_inicio %}active{% endblock %}
+
+{% block content %}
+
+<!-- HERO PRINCIPAL -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <h1>TU ESTILO,<br>NUESTRA PASIÓN</h1>
+    <p class="hero-sub">Experiencia · Precisión · Excelencia</p>
+    <a href="{% url 'agendar_cita' %}" class="btn-hero">AGENDAR CITA</a>
+  </div>
+</section>
+
+<!-- SOBRE NOSOTROS -->
+<section class="section" style="background:rgba(50,5,15,0.6)">
+  <div class="sobre-grid">
+    <div class="sobre-img">
+      <img src="{% static 'images/sobre-nosotros.jpg' %}" alt="Sobre Nosotros" style="width:100%;border-radius:12px;min-height:300px;object-fit:cover;background:rgba(50,5,15,.5)">
+    </div>
+    <div class="sobre-texto">
+      <h2>Sobre Nosotros</h2>
+      <p>En Barber House Ecuador combinamos estilo, precisión y atención personalizada para que cada cliente viva una experiencia única de Barbería, Cortes, Afeitado y coloración profesional con un ambiente elegante y moderno.</p>
+      <h3>Misión</h3>
+      <p>Ofrecer servicios de barbería y cuidado capilar de alta calidad, resaltando el estilo y la confianza de cada cliente.</p>
+      <h3>Visión</h3>
+      <p>Ser una barbería referente por nuestra excelencia, innovación y experiencia premium en el cuidado masculino.</p>
+      <a href="{% url 'servicios' %}" class="btn-hero" style="margin-top:20px;display:inline-block;font-size:.85rem;padding:11px 28px">Ver Servicios</a>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICIOS DESTACADOS -->
+<section class="section">
+  <p class="section-title">Nuestros Servicios</p>
+  <p class="section-sub">Los favoritos de nuestros clientes, con productos de primera calidad</p>
+  <div class="servicios-grid">
+    {% for sv in servicios %}
+    <div class="servicio-card">
+      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">✂️</div>
+      <div class="servicio-card-body">
+        <h3>{{ sv.nombre }}</h3>
+        <p>{{ sv.descripcion|default:"Servicio de alta calidad con los mejores profesionales." }}</p>
+      </div>
+      <div class="servicio-card-footer">
+        <span class="precio-tag">${{ sv.precio }}</span>
+        <span class="duracion-tag">{{ sv.duracion }} min</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="servicio-card">
+      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">✂️</div>
+      <div class="servicio-card-body"><h3>Perfilado & Ritual de Barba</h3><p>Personalizado, al igual que con tijeras premium con tratamiento fortalecientes.</p></div>
+      <div class="servicio-card-footer"><span class="precio-tag">$18.00</span><span class="duracion-tag">30 min</span></div>
+    </div>
+    <div class="servicio-card">
+      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">💆</div>
+      <div class="servicio-card-body"><h3>Mascarilla Facial Purificante</h3><p>Aplicación de mascarilla de arcilla negra para desintoxicar los poros y remover impurezas de la piel.</p></div>
+      <div class="servicio-card-footer"><span class="precio-tag">$10.00</span><span class="duracion-tag">20 min</span></div>
+    </div>
+    <div class="servicio-card">
+      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">⭐</div>
+      <div class="servicio-card-body"><h3>Pack Imperial</h3><p>La experiencia completa de la casa con servicios premium integrados.</p></div>
+      <div class="servicio-card-footer"><span class="precio-tag">$35.00</span><span class="duracion-tag">75 min</span></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- HERO RESERVA -->
+<section class="hero-reserva">
+  <div class="hero-reserva-bg"></div>
+  <div class="hero-reserva-content">
+    <h2>TU ESTILO,<br>TU MOMENTO.<br>RESERVA<br>TU SILLA.</h2>
+    <p>Agenda tu cita<br>y asegura tu lugar.</p>
+    <a href="{% url 'agendar_cita' %}" class="btn-hero">AGENDAR CITA</a>
+  </div>
+</section>
+
+{% endblock %}

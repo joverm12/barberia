@@ -1,0 +1,127 @@
+{% extends 'publico/base_publico.html' %}
+{% load static %}
+{% block title %}Mi Perfil — Barber House{% endblock %}
+
+{% block content %}
+<div style="background:linear-gradient(rgba(50,5,15,.7),rgba(50,5,15,.95));padding:28px 40px 14px">
+  <div style="background:linear-gradient(135deg,#d4a96a,#b8860b);border-radius:10px;padding:14px 22px;display:inline-block">
+    <h1 style="color:#1e020b;font-size:1.2rem;margin:0">Mi Perfil</h1>
+    <p style="color:rgba(30,2,11,.7);font-size:.78rem;margin:0">Configuración de cuenta</p>
+  </div>
+</div>
+
+<div style="max-width:1100px;margin:30px auto;padding:0 24px">
+
+  <!-- Bienvenida -->
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">
+    <div style="width:56px;height:56px;border-radius:50%;background:#d4a96a;display:flex;align-items:center;justify-content:center;font-size:1.8rem">😊</div>
+    <div>
+      <div style="font-size:1.4rem;font-weight:700;color:#1e020b">Bienvenido, {{ usuario.nombre }}</div>
+      <div style="font-size:.82rem;color:#888">
+        Miembro desde {% if cliente.fecha_registro %}{{ cliente.fecha_registro|date:"Y" }}{% else %}2024{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+    <!-- INFO PERSONAL -->
+    <div style="background:#fff;border-radius:12px;padding:24px;color:#222;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+      <h2 style="font-size:.95rem;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px">👤 Mi Información Personal</h2>
+      <form method="post" action="{% url 'guardar_perfil' %}">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;display:block;margin-bottom:4px">Nombres</label>
+            <input type="text" name="nombre" value="{{ usuario.nombre }}"
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ddd;font-size:.88rem">
+          </div>
+          <div>
+            <label style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;display:block;margin-bottom:4px">Apellidos</label>
+            <input type="text" name="apellido" value="{{ usuario.apellido }}"
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ddd;font-size:.88rem">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div>
+            <label style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;display:block;margin-bottom:4px">Cédula (No editable)</label>
+            <input type="text" value="{{ usuario.cedula|default:'—' }}" readonly
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ddd;font-size:.88rem;background:#f5f5f5;color:#888">
+          </div>
+          <div>
+            <label style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;display:block;margin-bottom:4px">Número Telefónico</label>
+            <input type="text" name="telefono" value="{{ usuario.telefono|default:'' }}"
+              style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ddd;font-size:.88rem">
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:.72rem;font-weight:700;color:#5a0018;text-transform:uppercase;display:block;margin-bottom:4px">Correo Electrónico</label>
+          <input type="email" value="{{ usuario.correo }}" readonly
+            style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ddd;font-size:.88rem;background:#f5f5f5;color:#888">
+        </div>
+        <button type="submit"
+          style="background:#5a0018;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;float:right">
+          💾 GUARDAR CAMBIOS
+        </button>
+      </form>
+    </div>
+
+    <!-- CITAS -->
+    <div style="background:#fff;border-radius:12px;padding:24px;color:#222;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+
+      <h2 style="font-size:.95rem;font-weight:700;margin-bottom:16px">📅 Próximas Citas</h2>
+      {% for cita in proximas %}
+      <div style="border:1px solid #eee;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <span style="font-size:.75rem;font-weight:700;color:#5a0018">CT-{{ cita.id_cita|stringformat:"04d" }}</span>
+          <span style="background:#fff3cd;color:#856404;padding:2px 10px;border-radius:5px;font-size:.7rem;font-weight:700">PENDIENTE</span>
+        </div>
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:2px">{{ cita.servicio.nombre|default:"Cita" }}</div>
+        <div style="font-size:.78rem;color:#666;margin-bottom:8px">
+          Sucursal: {{ cita.sucursal.nombre }}<br>
+          📅 {{ cita.fecha|date:"d \d\e F, Y" }} — {{ cita.hora|time:"H:i" }}<br>
+          💰 Total: ${{ cita.total }}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <a href="{% url 'comprobante_cita' cita.id_cita %}"
+            style="background:#5a0018;color:#fff;padding:5px 14px;border-radius:6px;font-size:.75rem;font-weight:700;text-decoration:none">
+            📄 Descargar PDF
+          </a>
+          <form method="post" action="{% url 'cancelar_cita' cita.id_cita %}" style="display:inline"
+                onsubmit="return confirm('¿Cancelar esta cita?')">
+            {% csrf_token %}
+            <button type="submit" style="border:1px solid #e57373;color:#e57373;background:transparent;padding:5px 14px;border-radius:6px;font-size:.75rem;cursor:pointer">
+              ✗ Cancelar
+            </button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <p style="color:#aaa;font-size:.85rem;margin-bottom:20px">
+        No tienes citas próximas.<br>
+        <a href="{% url 'agendar_cita' %}" style="color:#5a0018;font-weight:700">→ Agendar ahora</a>
+      </p>
+      {% endfor %}
+
+      <h2 style="font-size:.95rem;font-weight:700;margin-top:20px;margin-bottom:14px">⏱ Historial</h2>
+      {% for cita in historial %}
+      <div style="border:1px solid #eee;border-radius:8px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:.75rem;font-weight:700;color:#5a0018">CT-{{ cita.id_cita|stringformat:"04d" }}</span>
+          <span style="background:#d1ecf1;color:#0c5460;padding:2px 10px;border-radius:5px;font-size:.7rem;font-weight:700">FINALIZADA</span>
+        </div>
+        <div style="font-weight:700;font-size:.88rem">{{ cita.servicio.nombre|default:"Cita" }}</div>
+        <div style="font-size:.77rem;color:#666;margin-bottom:6px">📅 {{ cita.fecha|date:"d \d\e F, Y" }} — ${{ cita.total }}</div>
+        <a href="{% url 'comprobante_cita' cita.id_cita %}"
+          style="color:#5a0018;font-size:.78rem;font-weight:600;text-decoration:none">
+          📄 Descargar comprobante
+        </a>
+      </div>
+      {% empty %}
+      <p style="color:#aaa;font-size:.85rem">Sin historial aún.</p>
+      {% endfor %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

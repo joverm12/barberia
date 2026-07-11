@@ -1,0 +1,67 @@
+{% extends 'publico/base_publico.html' %}
+{% load static %}
+
+{% block content %}
+<div class="agenda-wrap">
+    <div class="agenda-header">
+        <div class="agenda-emp-info">
+            <div class="agenda-avatar">{{ empleado.usuario.nombre|slice:":1" }}</div>
+            <div>
+                <h2>Agenda: {{ empleado.usuario.nombre }} {{ empleado.usuario.apellido }}</h2>
+                <span class="sucursal-tag">Sucursal: {{ empleado.sucursal.nombre }}</span>
+            </div>
+        </div>
+        <div class="agenda-fecha-box">
+            <div class="agenda-fecha-label">FECHA ACTUAL</div>
+            <!-- Cambia esto en tu agenda_empleado.html -->
+            <div class="agenda-fecha-val">{{ hoy|date:"l, d M Y" }}</div>
+        </div>
+    </div>
+
+    <div class="agenda-citas-titulo">Citas Programadas para Hoy <span>Total: {{ citas.count }} Citas</span></div>
+
+    <div class="agenda-table-wrap">
+        <table class="agenda-table">
+            <thead>
+                <tr>
+                    <th>HORARIO</th>
+                    <th>CLIENTE</th>
+                    <th>SERVICIO</th>
+                    <th>ESTADO</th>
+                    <th>ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td class="agenda-horario">{{ cita.hora|time:"H:i" }}</td>
+                    
+                    <td class="agenda-cliente">
+                        <strong>{{ cita.cliente.usuario.nombre }}</strong><br>
+                        <small>{{ cita.cliente.telefono }}</small>
+                    </td>
+                    
+                    <td>{{ cita.servicio.nombre }}</td>
+                    
+                    <td><span class="estado-pill-emp ep-{{ cita.estado|slugify }}">{{ cita.estado }}</span></td>
+                    
+                    <td>
+                        {% if cita.estado == 'Pendiente' %}
+                            <form method="post" action="{% url 'iniciar_atencion' cita.id_cita %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-iniciar">Iniciar Atención</button>
+                            </form>
+                        {% elif cita.estado == 'En Proceso' %}
+                            <form method="post" action="{% url 'finalizar_servicio' cita.id_cita %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-finalizar">Finalizar Servicio</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

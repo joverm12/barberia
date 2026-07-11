@@ -1,0 +1,1353 @@
+
+bash
+
+cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barber House — Administración</title>
+  <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+</head>
+<body>
+
+<header class="main-header">
+  <div class="logo-side">
+    <img src="{% static 'images/logo.png' %}" alt="Barber House">
+    <div class="header-title-box" id="header-titulo">Administración</div>
+  </div>
+  <div class="header-right">
+    <span class="notif-icon">🔔</span>
+    <div class="user-profile">
+      <div class="dropdown">
+        <button class="dropbtn">👤 Usuario: {{ request.session.nombre }} ▲</button>
+        <div class="dropdown-content">
+          <a href="#" onclick="mostrarSeccion('administracion')" id="menu-administracion">Administración</a>
+          <a href="#" onclick="mostrarSeccion('operaciones')"    id="menu-operaciones">Operaciones</a>
+          <a href="#" onclick="mostrarSeccion('catalogo')"       id="menu-catalogo">Catálogo</a>
+          <a href="#" onclick="mostrarSeccion('marketing')"      id="menu-marketing">Marketing y Web</a>
+          <a href="#" onclick="mostrarSeccion('sistema')"        id="menu-sistema">Sistema</a>
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'logout' %}" class="logout-link">🚪 Cerrar Sesión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-content">
+
+<!-- ═══════════════════ ADMINISTRACIÓN ═══════════════════ -->
+<div id="seccion-administracion" class="modulo-seccion">
+
+  <!-- USUARIOS -->
+  <div class="title-box"><h1>Usuarios y Roles</h1><p>Gestión de Roles</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-usuario" placeholder="🔍 Buscar usuario..." onkeyup="filtrarTabla('buscar-usuario','tabla-usuarios')">
+    <select onchange="filtrarPorColumna(this.value,'tabla-usuarios',3)">
+      <option value="">Todos los Roles</option>
+      <option>Cliente</option><option>Barbero</option><option>Gerente Sucursal</option><option>Administrador</option>
+    </select>
+    <button class="btn-añadir" onclick="toggleForm('form-nuevo-usuario')">+ AÑADIR NUEVO USUARIO</button>
+  </div>
+
+  <div id="form-nuevo-usuario" class="form-card oculto">
+    <h3>Formulario: Crear Usuario</h3>
+    <form method="post" action="{% url 'crear_usuario' %}">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Juan" required></div>
+        <div class="form-group"><label>Apellido <span class="req">*</span></label><input type="text" name="apellido" placeholder="Ej. Pérez" required></div>
+        <div class="form-group"><label>Cédula</label><input type="text" name="cedula" placeholder="Solo números"></div>
+        <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" required></div>
+        <div class="form-group"><label>Contraseña <span class="req">*</span></label><input type="password" name="contrasenia" required></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" name="telefono" placeholder="099..."></div>
+        <div class="form-group"><label>Rol <span class="req">*</span></label>
+          <select name="rol"><option>Cliente</option><option>Barbero</option><option>Gerente Sucursal</option><option>Administrador</option></select></div>
+        <div class="form-group"><label>Estado</label>
+          <select name="estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="toggleForm('form-nuevo-usuario')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar Usuario</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container">
+    <table id="tabla-usuarios">
+      <thead><tr><th>ID</th><th>USUARIO</th><th>CORREO</th><th>ROL ASIGNADO</th><th>ESTADO</th><th>TIPO VINCULADO</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td>{{ u.id_usuario }}</td>
+          <td><strong>{{ u.nombre }} {{ u.apellido }}</strong></td>
+          <td>{{ u.correo }}</td>
+          <td>
+            {% if u.rol == "Cliente" %}<span class="badge badge-cliente">Cliente</span>
+            {% elif u.rol == "Barbero" %}<span class="badge badge-barbero">Barbero</span>
+            {% elif u.rol == "Gerente Sucursal" %}<span class="badge badge-gerente">Gerente Sucursal</span>
+            {% elif u.rol == "Administrador" %}<span class="badge badge-admin">Administrador</span>
+            {% else %}<span class="badge">{{ u.rol }}</span>{% endif %}
+          </td>
+          <td>{% if u.estado == "Activo" %}<span class="status-active">ACTIVO</span>{% else %}<span class="status-inactive">INACTIVO</span>{% endif %}</td>
+          <td>
+            {% if u.rol == "Cliente" %}<span class="badge" style="background:#1e6b5e;font-size:.72rem">→ Tabla Cliente</span>
+            {% elif u.rol == "Barbero" or u.rol == "Estilista" or u.rol == "Recepcionista" or u.rol == "Peluquero" or u.rol == "Gerente Sucursal" %}<span class="badge" style="background:#1a4f8e;font-size:.72rem">→ Tabla Empleado</span>
+            {% else %}<span style="color:var(--cream-dim);font-size:.78rem">—</span>{% endif %}
+          </td>
+          <td>
+            <button class="icon-btn" title="Editar"
+              onclick="abrirEditarUsuario('{{ u.id_usuario }}','{{ u.nombre }}','{{ u.apellido }}','{{ u.correo }}','{{ u.rol }}','{{ u.estado }}','{{ u.cedula|default:'-' }}','{{ u.telefono|default:'-' }}')">✏️</button>
+            <form method="post" action="{% url 'eliminar_usuario' u.id_usuario %}" style="display:inline" onsubmit="return confirm('¿Eliminar usuario?')">
+              {% csrf_token %}<button type="submit" class="icon-btn danger">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="empty-msg">No hay usuarios registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal editar usuario -->
+  <div id="modal-editar-usuario" class="form-card oculto" style="margin-top:16px">
+    <h3>✏️ Editar Usuario</h3>
+    <form method="post" id="form-editar-usuario-form" action="">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre</label><input type="text" name="nombre" id="eu-nombre"></div>
+        <div class="form-group"><label>Apellido</label><input type="text" name="apellido" id="eu-apellido"></div>
+        <div class="form-group"><label>Cédula</label><input type="text" name="cedula" id="eu-cedula"></div>
+        <div class="form-group"><label>Correo</label><input type="email" name="correo" id="eu-correo"></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" name="telefono" id="eu-telefono"></div>
+        <div class="form-group"><label>Rol</label>
+          <select name="rol" id="eu-rol"><option>Cliente</option><option>Barbero</option><option>Gerente Sucursal</option><option>Administrador</option></select></div>
+        <div class="form-group"><label>Estado</label>
+          <select name="estado" id="eu-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-usuario')">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-usuario-form')">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- EMPLEADOS -->
+  <div class="title-box" style="margin-top:32px"><h1>Empleados</h1><p>Gestión de Personal</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-empleado" placeholder="🔍 Buscar empleado..." onkeyup="filtrarTabla('buscar-empleado','tabla-empleados')">
+    <button class="btn-añadir" onclick="toggleForm('form-nuevo-empleado')">+ AÑADIR NUEVO EMPLEADO</button>
+  </div>
+
+  <div id="form-nuevo-empleado" class="form-card oculto">
+    <h3>Formulario: Registrar Empleado</h3>
+    <form method="post" action="{% url 'crear_empleado' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group"><label>Nombres <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Juan Mateo" required></div>
+        <div class="form-group"><label>Apellidos <span class="req">*</span></label><input type="text" name="apellido" placeholder="Ej. Gómez" required></div>
+        <div class="form-group"><label>Cédula <span class="req">*</span></label><input type="text" name="cedula" placeholder="Solo números" required></div>
+        <div class="form-group"><label>Fecha de Nacimiento</label><input type="date" name="fecha_nacimiento"></div>
+        <div class="form-group"><label>Teléfono <span class="req">*</span></label><input type="text" name="telefono" placeholder="099..."></div>
+        <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" placeholder="correo@empresa.com" required></div>
+        <div class="form-group"><label>Contraseña inicial</label><input type="password" name="contrasenia" placeholder="barber1234 por defecto"></div>
+        <div class="form-group form-col-full"><label>Dirección</label><input type="text" name="direccion" placeholder="Calle principal y transversal..."></div>
+        <div class="form-group">
+          <label>Fotografía de Perfil</label>
+          <div class="file-input-row">
+            <label class="file-label" for="foto-empleado">Seleccionar archivo</label>
+            <span class="file-name" id="foto-empleado-name">Sin archivos seleccionados</span>
+            <input type="file" id="foto-empleado" name="foto" accept="image/*" onchange="mostrarNombreArchivo(this,'foto-empleado-name')">
+          </div>
+        </div>
+        <div class="form-group"><label>Cargo <span class="req">*</span></label>
+          <select name="cargo"><option value="">Seleccione...</option><option>Barbero</option><option>Estilista</option><option>Recepcionista</option><option>Peluquero</option></select></div>
+        <div class="form-group"><label>Sucursal Asignada <span class="req">*</span></label>
+          <select name="sucursal"><option value="">Seleccione...</option>{% for s in sucursales %}<option value="{{ s.id_sucursal }}">{{ s.nombre }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Estado</label>
+          <select name="estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group form-col-full"><label>Especialidades Técnicas</label>
+          <div class="checkboxes-group">
+            <label><input type="checkbox" name="especialidad" value="Corte Masculino"> Corte Masculino</label>
+            <label><input type="checkbox" name="especialidad" value="Barbería Premium"> Barbería Premium</label>
+            <label><input type="checkbox" name="especialidad" value="Coloración"> Coloración</label>
+            <label><input type="checkbox" name="especialidad" value="Manicura/Pedicura"> Manicura/Pedicura</label>
+          </div>
+        </div>
+        <div class="form-group form-col-full"><label>Horario Base</label>
+          <div class="horario-row"><span>Apertura</span><input type="time" name="hora_apertura" value="09:00"><span>Cierre</span><input type="time" name="hora_cierre" value="18:00"></div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="toggleForm('form-nuevo-empleado')">Cancelar</button>
+        <button type="submit" class="btn-primary">💾 Guardar Empleado</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container">
+    <p class="subtable-label">Personal Registrado</p>
+    <table id="tabla-empleados">
+      <thead><tr><th>EMPLEADO</th><th>CÉDULA</th><th>CARGO / ESPECIALIDAD</th><th>SUCURSAL</th><th>ESTADO</th><th>USUARIO VINCULADO</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for e in empleados %}
+        <tr>
+          <td>
+            <div class="empleado-info">
+              <div class="avatar">{% if e.foto %}<img src="{{ e.foto.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">{% else %}👤{% endif %}</div>
+              <div><strong>{{ e.usuario.nombre }} {{ e.usuario.apellido }}</strong><br><small>{{ e.usuario.correo }}</small></div>
+            </div>
+          </td>
+          <td>{{ e.cedula|default:"—" }}</td>
+          <td><span class="badge badge-barbero">{{ e.cargo|default:e.usuario.rol }}</span><br><small style="color:var(--cream-dim)">{{ e.especialidad|default:"—" }}</small></td>
+          <td>{{ e.sucursal.nombre }}</td>
+          <td>{% if e.estado == "Activo" %}<span class="estado-pill estado-activo">ACTIVO</span>{% else %}<span class="estado-pill estado-inactivo">INACTIVO</span>{% endif %}</td>
+          <td><small style="color:var(--gold);font-size:.75rem">ID #{{ e.usuario.id_usuario }}<br>{{ e.usuario.rol }}</small></td>
+          <td>
+            <button class="icon-btn" title="Editar"
+              onclick="abrirEditarEmpleado('{{ e.id_empleado }}','{{ e.usuario.nombre }}','{{ e.usuario.apellido }}','{{ e.cargo|default:e.usuario.rol }}','{{ e.sucursal.id_sucursal }}','{{ e.estado }}','{{ e.especialidad|default:'-' }}')">✏️</button>
+            <form method="post" action="{% url 'eliminar_empleado' e.id_empleado %}" style="display:inline" onsubmit="return confirm('¿Eliminar empleado?')">
+              {% csrf_token %}<button type="submit" class="icon-btn danger">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="empty-msg">No hay empleados registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal editar empleado -->
+  <div id="modal-editar-empleado" class="form-card oculto" style="margin-top:16px">
+    <h3>✏️ Editar Empleado</h3>
+    <form method="post" id="form-editar-empleado-form" action="">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre</label><input type="text" name="nombre" id="ee-nombre"></div>
+        <div class="form-group"><label>Apellido</label><input type="text" name="apellido" id="ee-apellido"></div>
+        <div class="form-group"><label>Cargo</label>
+          <select name="cargo" id="ee-cargo"><option>Barbero</option><option>Estilista</option><option>Recepcionista</option><option>Peluquero</option></select></div>
+        <div class="form-group"><label>Sucursal</label>
+          <select name="sucursal" id="ee-sucursal">{% for s in sucursales %}<option value="{{ s.id_sucursal }}">{{ s.nombre }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Estado</label>
+          <select name="estado" id="ee-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group"><label>Especialidad</label><input type="text" name="especialidad" id="ee-especialidad"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-empleado')">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-empleado-form')">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- SUCURSALES -->
+  <div class="title-box" style="margin-top:32px"><h1>Sucursales</h1><p>Gestión de Locales</p></div>
+  <div class="search-box">
+    <input type="text" placeholder="🔍 Buscar sucursal..." onkeyup="filtrarTarjetas(this.value)">
+    <button class="btn-añadir" onclick="toggleForm('form-nueva-sucursal')">+ AÑADIR NUEVA SUCURSAL</button>
+  </div>
+
+  <div id="form-nueva-sucursal" class="form-card oculto">
+    <h3>Formulario: Detalles de la Sucursal</h3>
+    <form method="post" action="{% url 'crear_sucursal' %}">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Barber House - Centro" required></div>
+        <div class="form-group"><label>Estado</label><select name="estado"><option value="Activa">Activa</option><option value="Inactiva">Inactiva</option></select></div>
+        <div class="form-group form-col-full"><label>Dirección completa <span class="req">*</span></label><input type="text" name="direccion_completa" placeholder="Calle principal y nomenclatura..." required></div>
+        <div class="form-group"><label>Ciudad <span class="req">*</span></label><input type="text" name="ciudad" placeholder="Ej. Quito" required></div>
+        <div class="form-group"><label>Provincia <span class="req">*</span></label><input type="text" name="provincia" placeholder="Ej. Pichincha" required></div>
+        <div class="form-group"><label>Teléfono <span class="req">*</span></label><input type="text" name="telefono" placeholder="Solo números" required></div>
+        <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" placeholder="correo@sucursal.com" required></div>
+        <div class="form-group"><label>GPS Latitud</label><input type="text" name="gps_latitud" placeholder="-0.1834"></div>
+        <div class="form-group"><label>GPS Longitud</label><input type="text" name="gps_longitud" placeholder="-78.4832"></div>
+        <div class="form-group form-col-full"><label>Horario <span class="req">*</span></label>
+          <div class="horario-row"><span>De</span><input type="time" name="hora_apertura" value="08:00"><span>hasta</span><input type="time" name="hora_cierre" value="20:00"></div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="toggleForm('form-nueva-sucursal')">Cancelar</button>
+        <button type="submit" class="btn-primary">💾 Guardar Sucursal</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="sucursales-grid">
+    {% for s in sucursales %}
+    <div class="sucursal-card" data-nombre="{{ s.nombre|lower }}">
+      <div class="sucursal-img"><div class="no-img">✂️</div>
+        <span class="badge-sucursal {% if s.estado == 'Activa' %}activa{% else %}inactiva{% endif %}">{{ s.estado|upper }}</span>
+      </div>
+      <div class="sucursal-body">
+        <h3>{{ s.nombre }}</h3>
+        <p>📍 {{ s.direccion_completa }}, {{ s.ciudad }}</p>
+        <p>📞 <span class="label">Teléfono:</span> {{ s.telefono }}</p>
+        <p>✉️ <span class="label">Correo:</span> {{ s.correo }}</p>
+        <p>🕐 <span class="label">Horario:</span> {{ s.hora_apertura|time:"H:i" }} - {{ s.hora_cierre|time:"H:i" }}</p>
+      </div>
+      <div class="sucursal-footer">
+        <button class="btn-editar"
+           onclick='abrirEditarSucursal("{{ s.id_sucursal|escapejs }}","{{ s.nombre|escapejs }}","{{ s.estado|escapejs }}","{{ s.direccion_completa|escapejs }}","{{ s.ciudad|escapejs }}","{{ s.provincia|escapejs }}","{{ s.telefono|escapejs }}","{{ s.correo|escapejs }}","{{ s.hora_apertura|date:"-" }}","{{ s.hora_cierre|date:"-" }}")'>
+              ✏️ Editar info
+        </button>
+  
+        <form method="post" action="{% url 'eliminar_sucursal' s.id_sucursal %}" style="display:inline" onsubmit="return confirm('¿Eliminar sucursal?')">
+          {% csrf_token %}
+          <button type="submit" class="btn-galeria" style="background:rgba(229,115,115,.15);border-color:rgba(229,115,115,.35);color:var(--red)">🗑️ Eliminar</button>
+        </form>
+      </div>
+    </div>
+    {% empty %}<p class="empty-msg">No hay sucursales registradas.</p>{% endfor %}
+  </div>
+
+  <!-- Modal editar sucursal -->
+  <div id="modal-editar-sucursal" class="form-card oculto" style="margin-top:16px">
+    <h3>✏️ Editar Sucursal</h3>
+    <form method="post" id="form-editar-sucursal-form" action="">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre</label><input type="text" name="nombre" id="es-nombre"></div>
+        <div class="form-group"><label>Estado</label><select name="estado" id="es-estado"><option value="Activa">Activa</option><option value="Inactiva">Inactiva</option></select></div>
+        <div class="form-group form-col-full"><label>Dirección</label><input type="text" name="direccion_completa" id="es-direccion"></div>
+        <div class="form-group"><label>Ciudad</label><input type="text" name="ciudad" id="es-ciudad"></div>
+        <div class="form-group"><label>Provincia</label><input type="text" name="provincia" id="es-provincia"></div>
+        <div class="form-group"><label>Teléfono</label><input type="text" name="telefono" id="es-telefono"></div>
+        <div class="form-group"><label>Correo</label><input type="email" name="correo" id="es-correo"></div>
+        <div class="form-group form-col-full"><label>Horario</label>
+          <div class="horario-row"><span>De</span><input type="time" name="hora_apertura" id="es-apertura"><span>hasta</span><input type="time" name="hora_cierre" id="es-cierre"></div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-sucursal')">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-sucursal-form')">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+
+</div><!-- /administracion -->
+
+<!-- ═══════════════════ OPERACIONES ═══════════════════ -->
+<div id="seccion-operaciones" class="modulo-seccion oculto">
+  <div class="title-box"><h1>Dashboard</h1><p>Estadísticas Globales</p></div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Clientes Registrados</div><div class="kpi-value">{{ clientes_count }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Citas Hoy</div><div class="kpi-value">{{ citas_hoy }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Ingresos del Mes</div><div class="kpi-value gold">${{ ingresos_mes }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Postulaciones RRHH</div><div class="kpi-value">{{ postulaciones_count }}</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-box"><canvas id="barChart" style="max-width:100%;height:300px"></canvas></div>
+    <div class="chart-box"><canvas id="pieChart" style="max-width:100%;height:300px"></canvas></div>
+  </div>
+
+  {{ ingresos_json|json_script:"ingresos-data" }}
+  {{ servicios_json|json_script:"servicios-data" }}
+  <div class="reporte-box">
+    <h3>Generador de Reportes Especializados</h3>
+    <div class="reporte-row">
+      <div><label>Tipo de Reporte</label>
+        <select><option>Reporte de Citas y Reservas</option><option>Reporte de Ingresos</option><option>Reporte de Empleados</option></select></div>
+      <div><label>Fecha Inicio</label><input type="date"></div>
+      <div><label>Fecha Fin</label><input type="date"></div>
+      <button class="btn-primary" style="align-self:flex-end">GENERAR</button>
+      <button class="btn-sistema" style="align-self:flex-end">📄 PDF</button>
+    </div>
+  </div>
+
+  <!-- CITAS -->
+  <div class="title-box" style="margin-top:32px"><h1>Citas</h1><p>Gestión de Citas</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-cita" placeholder="🔍 Buscar cita..." onkeyup="filtrarTabla('buscar-cita','tabla-citas')">
+    <button class="btn-añadir" onclick="toggleForm('form-nueva-cita')">+ AÑADIR NUEVA CITA MANUAL</button>
+  </div>
+
+  <div id="form-nueva-cita" class="form-card oculto">
+    <h3>Formulario: Agendar Cita (Administrador)</h3>
+    <form id="formNuevaCita" method="post" action="{% url 'crear_cita' %}" onsubmit="deshabilitarBotones(this)">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2">
+          <label>Cliente <span class="req">*</span></label>
+          <div style="display:flex;gap:8px">
+            <select name="cliente" style="flex:1;padding:10px 13px;border-radius:var(--radius);border:1px solid rgba(150,50,70,.35);background:rgba(20,2,8,.5);color:var(--cream)">
+              <option value="">Seleccionar cliente...</option>
+              {% for c in clientes_lista %}<option value="{{ c.id_cliente }}">{{ c.usuario.nombre }} {{ c.usuario.apellido }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Sucursal <span class="req">*</span></label>
+          <select name="sucursal"><option value="">Seleccione...</option>{% for s in sucursales_lista %}<option value="{{ s.id_sucursal }}">{{ s.nombre }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Servicio Principal</label>
+          <select name="servicio" id="cita-servicio" onchange="calcularTotalAdmin()"><option value="">Seleccione...</option>{% for sv in servicios_lista %}<option value="{{ sv.id_servicio }}" data-precio="{{ sv.precio }}">{{ sv.nombre }} (${{ sv.precio }})</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Profesional</label>
+          <select name="empleado"><option value="">Cualquiera disponible</option>{% for e in empleados_lista %}<option value="{{ e.id_empleado }}">{{ e.usuario.nombre }} {{ e.usuario.apellido }}</option>{% endfor %}</select></div>
+        <div class="form-group"><label>Fecha <span class="req">*</span></label><input type="date" name="fecha" required></div>
+        <div class="form-group"><label>Hora <span class="req">*</span></label><input type="time" name="hora" required></div>
+        <div class="form-group form-col-full"><label>Servicios Complementarios</label>
+          <div class="checkboxes-group">
+            {% for c in complementarios %}
+            <label><input type="checkbox" name="comp_ids" value="{{ c.id_complementario }}" data-precio="{{ c.precio }}" onchange="calcularTotalAdmin()"> {{ c.nombre }} (+${{ c.precio }})</label>
+            {% empty %}
+            <label><input type="checkbox" data-precio="5" onchange="calcularTotalAdmin()"> Lavado Capilar (+$5.00)</label>
+            <label><input type="checkbox" data-precio="8" onchange="calcularTotalAdmin()"> Perfilado de Barba (+$8.00)</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="form-group form-col-full"><label>Observaciones</label>
+          <textarea name="observaciones" placeholder="Ej. el cliente solicita que el corte sea rápido..."></textarea></div>
+      </div>
+      <div style="padding-top:10px;margin-bottom:10px">
+        <strong style="color:var(--gold)">TOTAL ESTIMADO</strong>
+        <div id="total-admin" style="font-size:1.4rem;font-weight:800;margin-top:4px">$0.00</div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="toggleForm('form-nueva-cita')">Cancelar</button>
+        <button type="submit" class="btn-primary">✅ Confirmar Cita</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container">
+    <table id="tabla-citas">
+      <thead><tr><th>CÓD.</th><th>FECHA/HORA</th><th>CLIENTE</th><th>SERVICIO</th><th>PROFESIONAL</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for c in citas %}
+        <tr>
+          <td class="cita-code">CT-{{ c.id_cita|stringformat:"03d" }}</td>
+          <td>{{ c.fecha|date:"d M Y" }}<br><small>{{ c.hora|time:"H:i" }}</small></td>
+          <td><strong>{{ c.cliente.usuario.nombre }} {{ c.cliente.usuario.apellido }}</strong></td>
+          <td>{{ c.servicio.nombre|default:"—" }}</td>
+          <td>{{ c.empleado.usuario.nombre }} {{ c.empleado.usuario.apellido }}</td>
+          <td>
+            {% if c.estado == "Pendiente" %}<span class="estado-pill estado-pendiente">● PENDIENTE</span>
+            {% elif c.estado == "En Proceso" %}<span class="estado-pill" style="background:rgba(91,135,212,.15);color:#5b87d4;border:1px solid rgba(91,135,212,.3)">● EN PROCESO</span>
+            {% elif c.estado == "Finalizada" %}<span class="estado-pill estado-finalizada">● FINALIZADA</span>
+            {% else %}<span class="estado-pill">{{ c.estado }}</span>{% endif %}
+          </td>
+          <td>
+            <div class="cita-actions">
+              <button class="icon-btn" title="Ver">👁️</button>
+              {% if c.estado == "Pendiente" %}
+              <form method="post" action="{% url 'registrar_pago' %}">
+                {% csrf_token %}
+                <input type="hidden" name="cita_id" value="{{ c.id_cita }}">
+                <input type="hidden" name="metodo_pago" value="Efectivo">
+                <button type="submit" class="btn-cobrar">COBRAR</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="empty-msg">No hay citas registradas.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="simulador-box">
+    <h3>📅 Simulador: Flujo de Agendamiento Interno</h3>
+    <div class="simulador-steps">
+      <div><div class="step-label">1. Sucursal</div>
+        <select class="pv-select">{% for s in sucursales %}<option>{{ s.nombre }}</option>{% endfor %}</select></div>
+      <div><div class="step-label">2. Servicio Principal</div>
+        <select class="pv-select">{% for sv in servicios %}<option>{{ sv.nombre }}</option>{% endfor %}</select></div>
+      <div><div class="step-label">3. Profesional</div>
+        <select class="pv-select"><option>Cualquiera disponible</option>{% for e in empleados %}<option>{{ e.usuario.nombre }}</option>{% endfor %}</select></div>
+      <div><div class="step-label">4. Fecha y Hora</div>
+        <div style="display:flex;gap:6px">
+          <input type="date" style="flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--gold-border);background:var(--bg-darker);color:var(--cream)">
+          <input type="time" style="width:90px;padding:9px;border-radius:var(--radius);border:1px solid var(--gold-border);background:var(--bg-darker);color:var(--cream)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGOS -->
+  <div class="title-box" style="margin-top:32px"><h1>Pagos y Caja</h1><p>Gestión de Facturas de Venta</p></div>
+  <div class="pagos-layout">
+    <div class="punto-venta">
+      <h3>Punto de Venta</h3>
+      <div style="margin-bottom:12px">
+        <label style="font-size:.78rem;color:var(--cream-dim);display:block;margin-bottom:4px">Seleccionar Cita Pendiente</label>
+        <select class="pv-select" id="pv-cita-select" onchange="cargarDatosCita(this)">
+          <option value="">Seleccionar cita...</option>
+          {% for c in citas %}{% if c.estado == "Pendiente" %}
+          <option value="{{ c.id_cita }}" data-total="{{ c.total }}" data-servicio="{{ c.servicio.nombre|default:'—' }}">
+            CT-{{ c.id_cita|stringformat:"03d" }} — {{ c.cliente.usuario.nombre }} {{ c.cliente.usuario.apellido }}
+          </option>
+          {% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="linea-item"><span id="pv-servicio">Servicio</span><span id="pv-precio">$0.00</span></div>
+      <div class="total-line"><span>TOTAL:</span><span id="pv-total">$0.00</span></div>
+      <div style="margin-top:14px">
+        <label style="font-size:.78rem;color:var(--cream-dim);display:block;margin-bottom:4px">Método de Pago</label>
+        <select class="pv-select" id="pv-metodo"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
+      </div>
+      <form method="post" action="{% url 'registrar_pago' %}" id="form-cobro-pv">
+        {% csrf_token %}
+        <input type="hidden" name="cita_id" id="pv-cita-id" value="">
+        <input type="hidden" name="metodo_pago" id="pv-metodo-hidden" value="Efectivo">
+        <button type="submit" class="btn-primary" style="width:100%;margin-top:18px;padding:13px"
+          onclick="document.getElementById('pv-metodo-hidden').value=document.getElementById('pv-metodo').value">
+          💳 REGISTRAR PAGO Y FACTURAR
+        </button>
+      </form>
+    </div>
+    <div class="ultimas-facturas">
+      <div class="uf-header"><h3>Últimas Facturas</h3><button class="btn-cierre">Cierre de Caja Diario</button></div>
+      <table class="plantillas-table">
+        <thead><tr><th>FACTURA #</th><th>MONTO</th><th>MÉTODO</th><th>PDF</th></tr></thead>
+        <tbody>
+          {% for f in facturas %}<tr><td>{{ f.numero }}</td><td>${{ f.total }}</td><td>{{ f.pago.metodo_pago }}</td><td><button class="icon-btn">📄</button></td></tr>
+          {% empty %}<tr><td colspan="4" class="empty-msg">Sin facturas aún.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /operaciones -->
+
+<!-- ═══════════════════ CATÁLOGO ═══════════════════ -->
+<div id="seccion-catalogo" class="modulo-seccion oculto">
+  <div class="title-box"><h1>Catálogo</h1><p>Gestión del Catálogo</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-srv" placeholder="🔍 Buscar servicio..." onkeyup="filtrarTabla('buscar-srv','tabla-servicios')">
+    <select onchange="filtrarPorColumna(this.value,'tabla-servicios',1)">
+      <option value="">Todos</option><option>Barbería</option><option>Estética</option><option>Packs Promocionales</option>
+    </select>
+    <button class="btn-añadir" onclick="toggleForm('form-nuevo-servicio')">+ AÑADIR NUEVO SERVICIO</button>
+  </div>
+
+  <div id="form-nuevo-servicio" class="form-card">
+    <h3>Formulario: Crear/Editar Servicio</h3>
+    <form method="post" action="{% url 'crear_servicio' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre del Servicio <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Afeitado Ritual" required></div>
+        <div class="form-group"><label>Categoría <span class="req">*</span></label>
+          <select name="categoria"><option>Barbería</option><option>Estética</option><option>Packs Promocionales</option></select></div>
+        <div class="form-group"><label>Estado</label>
+          <select name="estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group"><label>Duración (min) <span class="req">*</span></label><input type="number" name="duracion" placeholder="45" required></div>
+        <div class="form-group"><label>Precio ($) <span class="req">*</span></label><input type="number" name="precio" placeholder="15.00" step="0.01" required></div>
+        <div class="form-group">
+          <label>Fotografía Referencial</label>
+          <div class="file-input-row">
+            <label class="file-label" for="foto-servicio">Seleccionar archivo</label>
+            <span class="file-name" id="foto-servicio-name">Sin archivos seleccionados</span>
+            <input type="file" id="foto-servicio" name="foto" onchange="mostrarNombreArchivo(this,'foto-servicio-name')">
+          </div>
+        </div>
+        <div class="form-group form-col-full"><label>Descripción Corta</label>
+          <textarea name="descripcion" placeholder="Describe el servicio..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="this.closest('form').reset()">Cancelar</button>
+        <button type="submit" class="btn-primary">💾 Guardar Servicio</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container" style="margin-top:20px">
+    <table id="tabla-servicios">
+      <thead><tr><th>SERVICIO</th><th>CATEGORÍA</th><th>DURACIÓN</th><th>PRECIO</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for sv in servicios %}
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:8px">
+            <span>{% if sv.categoria == "Barbería" %}✂️{% elif sv.categoria == "Estética" %}⭐{% else %}📦{% endif %}</span>
+            <strong>{{ sv.nombre }}</strong></div></td>
+          <td>{{ sv.categoria|default:"—" }}</td>
+          <td>{{ sv.duracion }} min</td>
+          <td>${{ sv.precio }}</td>
+          <td>{% if sv.estado == "Activo" %}<span class="estado-pill estado-activo">ACTIVO</span>{% else %}<span class="estado-pill estado-inactivo">INACTIVO</span>{% endif %}</td>
+          <td>
+            <button class="icon-btn" onclick="abrirEditarServicio('{{ sv.id_servicio }}','{{ sv.nombre }}','{{ sv.categoria }}','{{ sv.estado }}','{{ sv.duracion }}','{{ sv.precio }}','{{ sv.descripcion|default:'-' }}')">✏️</button>
+            <form method="post" action="{% url 'eliminar_servicio' sv.id_servicio %}" style="display:inline" onsubmit="return confirm('¿Eliminar servicio?')">
+              {% csrf_token %}<button type="submit" class="icon-btn danger">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="empty-msg">No hay servicios registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal editar servicio -->
+  <div id="modal-editar-servicio" class="form-card oculto" style="margin-top:16px">
+    <h3>✏️ Editar Servicio</h3>
+    <form method="post" id="form-editar-servicio-form" action="">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre</label><input type="text" name="nombre" id="esv-nombre"></div>
+        <div class="form-group"><label>Categoría</label><select name="categoria" id="esv-categoria"><option>Barbería</option><option>Estética</option><option>Packs Promocionales</option></select></div>
+        <div class="form-group"><label>Estado</label><select name="estado" id="esv-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group"><label>Duración (min)</label><input type="number" name="duracion" id="esv-duracion"></div>
+        <div class="form-group"><label>Precio ($)</label><input type="number" name="precio" id="esv-precio" step="0.01"></div>
+        <div class="form-group form-col-full"><label>Descripción</label><textarea name="descripcion" id="esv-descripcion"></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-servicio')">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-servicio-form')">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- COMPLEMENTARIOS -->
+  <div class="title-box" style="margin-top:32px"><h1>Servicios Complementarios</h1><p>Add-ons disponibles al agendar citas</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-comp" placeholder="🔍 Buscar complementario..." onkeyup="filtrarTabla('buscar-comp','tabla-comp')">
+    <button class="btn-añadir" onclick="toggleForm('form-nuevo-comp')">+ AÑADIR COMPLEMENTARIO</button>
+  </div>
+
+  <div id="form-nuevo-comp" class="form-card oculto">
+    <h3>Formulario: Crear Servicio Complementario</h3>
+    <form method="post" action="{% url 'crear_complementario' %}">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Lavado Capilar" required></div>
+        <div class="form-group"><label>Precio ($) <span class="req">*</span></label><input type="number" name="precio" placeholder="5.00" step="0.01" required></div>
+        <div class="form-group"><label>Duración Extra (min)</label><input type="number" name="duracion_extra" placeholder="15" value="15"></div>
+        <div class="form-group"><label>Estado</label><select name="estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group form-col-full"><label>Descripción</label><textarea name="descripcion" placeholder="Describe el complementario..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="toggleForm('form-nuevo-comp')">Cancelar</button>
+        <button type="submit" class="btn-primary">💾 Guardar Complementario</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-container" style="margin-top:16px">
+    <table id="tabla-comp">
+      <thead><tr><th>NOMBRE</th><th>PRECIO</th><th>DURACIÓN EXTRA</th><th>DESCRIPCIÓN</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for c in complementarios %}
+        <tr>
+          <td><strong>{{ c.nombre }}</strong></td>
+          <td>+${{ c.precio }}</td>
+          <td>+{{ c.duracion_extra }} min</td>
+          <td><small style="color:var(--cream-dim)">{{ c.descripcion|default:"—" }}</small></td>
+          <td>{% if c.estado == "Activo" %}<span class="estado-pill estado-activo">ACTIVO</span>{% else %}<span class="estado-pill estado-inactivo">INACTIVO</span>{% endif %}</td>
+          <td>
+            <button class="icon-btn" onclick="abrirEditarComp('{{ c.id_complementario }}','{{ c.nombre }}','{{ c.precio }}','{{ c.duracion_extra }}','{{ c.estado }}','{{ c.descripcion|default:'-' }}')">✏️</button>
+            <form method="post" action="{% url 'eliminar_complementario' c.id_complementario %}" style="display:inline" onsubmit="return confirm('¿Eliminar complementario?')">
+              {% csrf_token %}<button type="submit" class="icon-btn danger">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="empty-msg">No hay complementarios registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal editar complementario -->
+  <div id="modal-editar-comp" class="form-card oculto" style="margin-top:16px">
+    <h3>✏️ Editar Complementario</h3>
+    <form method="post" id="form-editar-comp-form" action="">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-group form-col-2"><label>Nombre</label><input type="text" name="nombre" id="ec-nombre"></div>
+        <div class="form-group"><label>Precio ($)</label><input type="number" name="precio" id="ec-precio" step="0.01"></div>
+        <div class="form-group"><label>Duración Extra (min)</label><input type="number" name="duracion_extra" id="ec-duracion"></div>
+        <div class="form-group"><label>Estado</label><select name="estado" id="ec-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group form-col-full"><label>Descripción</label><textarea name="descripcion" id="ec-descripcion"></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-comp')">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-comp-form')">💾 Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div><!-- /catalogo -->
+
+<!-- ═══════════════════ MARKETING ═══════════════════ -->
+<div id="seccion-marketing" class="modulo-seccion oculto">
+  <div class="title-box"><h1>Marketing y Web</h1><p>Contenido Web, Reseñas, RRHH y Notificaciones</p></div>
+
+  <div class="mkt-tabs">
+    <button class="mkt-tab active" onclick="mktTab(this,'mkt-inicio')">Página Inicio</button>
+    <button class="mkt-tab" onclick="mktTab(this,'mkt-nosotros')">Nosotros / Historia</button>
+    <button class="mkt-tab" onclick="mktTab(this,'mkt-valores')">Valores</button>
+    <button class="mkt-tab" onclick="mktTab(this,'mkt-galeria')">Galería Web</button>
+    <button class="mkt-tab" onclick="mktTab(this,'mkt-faq')">FAQ</button>
+  </div>
+
+  <!-- TAB INICIO -->
+  <div id="mkt-inicio" class="mkt-panel">
+    <div class="mkt-layout">
+      <div class="form-card">
+        <h3>Editor de Hero Banner (Inicio)</h3>
+        <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
+          {% csrf_token %}<input type="hidden" name="seccion" value="inicio">
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Título Principal (H1)</label>
+            <input type="text" name="titulo" value="{{ contenido_inicio.titulo|default:'' }}" placeholder="Elegancia y precisión en cada detalle">
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>Subtítulo / Descripción</label>
+            <textarea name="subtitulo" rows="4" placeholder="Descripción...">{{ contenido_inicio.subtitulo|default:'' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>Imagen de Fondo / Modelo</label>
+            <div class="file-input-row">
+              <label class="file-label" for="img-hero">Seleccionar archivo</label>
+              <span class="file-name" id="img-hero-name">Sin archivos seleccionados</span>
+              <input type="file" id="img-hero" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-hero-name')">
+            </div>
+            {% if contenido_inicio.imagen %}<div style="margin-top:8px"><img src="{{ contenido_inicio.imagen.url }}" style="max-width:200px;border-radius:8px;border:1px solid var(--gold-border)"></div>{% endif %}
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
+        </form>
+      </div>
+      <div class="form-card">
+        <h3>Moderación de Reseñas de Clientes</h3>
+        {% for r in resenas %}
+        <div class="resena-card">
+          <div class="resena-header">
+            <div>
+              <div class="resena-cliente">{{ r.cliente.usuario.nombre }} {{ r.cliente.usuario.apellido|slice:":1" }}.</div>
+              <div class="resena-stars">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% else %}☆{% endif %}{% endfor %}</div>
+            </div>
+            <span class="resena-tipo {% if r.calificacion >= 4 %}tipo-positivo{% else %}tipo-negativo{% endif %}">
+              {% if r.calificacion >= 4 %}POSITIVO{% else %}QUEJA / NEGATIVO{% endif %}
+            </span>
+          </div>
+          <div class="resena-texto">"{{ r.comentario }}"</div>
+          <div class="resena-acciones">
+            {% if r.estado == "Pendiente" %}
+            <form method="post" action="{% url 'aprobar_resena' r.id_resena %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-aprobar">✓ Aprobar</button></form>
+            <form method="post" action="{% url 'rechazar_resena' r.id_resena %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-rechazar">✗ Rechazar</button></form>
+            {% else %}<span class="estado-pill {% if r.estado == 'Aprobado' %}estado-activo{% else %}estado-inactivo{% endif %}">{{ r.estado }}</span>{% endif %}
+          </div>
+        </div>
+        {% empty %}<p class="empty-msg">No hay reseñas pendientes.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB NOSOTROS -->
+  <div id="mkt-nosotros" class="mkt-panel oculto">
+    <div class="form-card" style="max-width:700px">
+      <h3>Editor — Nosotros / Historia</h3>
+      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
+        {% csrf_token %}<input type="hidden" name="seccion" value="nosotros">
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Título de Sección</label>
+          <input type="text" name="titulo" placeholder="Ej. Sobre Nosotros">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Historia / Descripción</label>
+          <textarea name="subtitulo" rows="6" placeholder="Cuéntanos la historia de Barber House..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Imagen Principal</label>
+          <div class="file-input-row">
+            <label class="file-label" for="img-nosotros">Seleccionar archivo</label>
+            <span class="file-name" id="img-nosotros-name">Sin archivos seleccionados</span>
+            <input type="file" id="img-nosotros" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-nosotros-name')">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB VALORES -->
+  <div id="mkt-valores" class="mkt-panel oculto">
+    <div class="form-card" style="max-width:700px">
+      <h3>Editor — Valores de la Empresa</h3>
+      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
+        {% csrf_token %}<input type="hidden" name="seccion" value="valores">
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Misión</label>
+          <textarea name="titulo" rows="3" placeholder="Ofrecer servicios de barbería y cuidado capilar de alta calidad..."></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Visión</label>
+          <textarea name="subtitulo" rows="3" placeholder="Ser una barbería referente por nuestra excelencia..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB GALERÍA -->
+  <div id="mkt-galeria" class="mkt-panel oculto">
+    <div class="form-card">
+      <h3>Galería Web — Subir Imágenes</h3>
+      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
+        {% csrf_token %}<input type="hidden" name="seccion" value="galeria">
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Subir imagen a la galería</label>
+          <div class="file-input-row">
+            <label class="file-label" for="img-galeria">Seleccionar archivo</label>
+            <span class="file-name" id="img-galeria-name">Sin archivos seleccionados</span>
+            <input type="file" id="img-galeria" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-galeria-name')">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Descripción / Alt text</label>
+          <input type="text" name="titulo" placeholder="Ej. Corte clásico masculino en sucursal Norte">
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 SUBIR IMAGEN</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB FAQ -->
+  <div id="mkt-faq" class="mkt-panel oculto">
+    <div class="form-card" style="max-width:700px">
+      <h3>Editor — Preguntas Frecuentes (FAQ)</h3>
+      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
+        {% csrf_token %}<input type="hidden" name="seccion" value="faq">
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Pregunta</label>
+          <input type="text" name="titulo" placeholder="Ej. ¿Debo reservar con anticipación?">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Respuesta</label>
+          <textarea name="subtitulo" rows="4" placeholder="Respuesta a la pregunta..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:13px">➕ AÑADIR FAQ</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RRHH -->
+  <div class="title-box" style="margin-top:28px"><h1>RRHH (Vacantes)</h1><p>Gestión de Vacantes</p></div>
+  <div class="search-box">
+    <input type="text" id="buscar-postulacion" placeholder="🔍 Buscar candidato..." onkeyup="filtrarTabla('buscar-postulacion','tabla-postulaciones')">
+    <select onchange="filtrarPorColumna(this.value,'tabla-postulaciones',4)">
+      <option value="">Todas las Etapas</option><option>Recibido</option><option>En Revisión</option><option>Entrevista Prog.</option><option>Contratado</option>
+    </select>
+  </div>
+  <div class="table-container">
+    <table id="tabla-postulaciones">
+      <thead><tr><th>FECHA</th><th>CANDIDATO</th><th>CARGO APLICADO</th><th>CIUDAD</th><th>ETAPA ACTUAL</th><th>ACCIONES</th></tr></thead>
+      <tbody>
+        {% for p in postulaciones %}
+        <tr>
+          <td>📅 {{ p.fecha_postulacion|date:"d M Y" }}</td>
+          <td><strong>{{ p.nombre_candidato }}</strong><br><small>{{ p.correo_candidato }}</small></td>
+          <td>{{ p.puesto_aplica }}</td>
+          <td>{{ p.sucursal_interes.ciudad|default:"—" }}</td>
+          <td>
+            {% if p.estado == "Recibido" %}<span class="estado-pill estado-nueva">1. NUEVA</span>
+            {% elif p.estado == "En Revisión" %}<span class="estado-pill estado-revision">2. EN REVISIÓN</span>
+            {% elif p.estado == "Entrevista Prog." %}<span class="estado-pill estado-entrevista">3. ENTREVISTA PROG.</span>
+            {% elif p.estado == "Contratado" %}<span class="estado-pill estado-contratado">CONTRATADO</span>
+            {% else %}<span class="estado-pill">{{ p.estado }}</span>{% endif %}
+          </td>
+          <td>
+            <button class="icon-btn" onclick="abrirVerPostulacion('{{ p.nombre_candidato }}','{{ p.puesto_aplica }}','{{ p.correo_candidato }}','{{ p.telefono_contacto }}','{{ p.motivacion|default:'-' }}')">📄 Info/CV</button>
+            <form method="post" action="{% url 'avanzar_postulacion' p.id_postulacion %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-success" style="font-size:.75rem;padding:5px 10px">▶ Avanzar</button></form>
+            {% if p.estado == "Entrevista Prog." %}
+            <form method="post" action="{% url 'contratar_postulacion' p.id_postulacion %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-primary" style="font-size:.75rem;padding:5px 10px">✓ Contratar</button></form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="empty-msg">No hay postulaciones.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal ver postulación -->
+  <div id="modal-ver-postulacion" class="form-card oculto" style="margin-top:16px">
+    <h3>📄 Detalle de Postulación</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Candidato</label><input type="text" id="vp-nombre" readonly style="background:rgba(20,2,8,.3)"></div>
+      <div class="form-group"><label>Puesto</label><input type="text" id="vp-puesto" readonly style="background:rgba(20,2,8,.3)"></div>
+      <div class="form-group"><label>Correo</label><input type="text" id="vp-correo" readonly style="background:rgba(20,2,8,.3)"></div>
+      <div class="form-group"><label>Teléfono</label><input type="text" id="vp-telefono" readonly style="background:rgba(20,2,8,.3)"></div>
+      <div class="form-group form-col-full"><label>Motivación</label><textarea id="vp-motivacion" rows="4" readonly style="background:rgba(20,2,8,.3)"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn-primary" onclick="cerrarModal('modal-ver-postulacion')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIONES -->
+  <div class="title-box" style="margin-top:28px"><h1>Notificaciones</h1><p>Gestión de avisos</p></div>
+  <div class="mkt-layout">
+    <div class="form-card">
+      <h3>Redactar Mensaje | Campaña Masiva</h3>
+      <form method="post" action="{% url 'enviar_notificacion' %}">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:14px"><label>Asunto <span class="req">*</span></label><input type="text" name="asunto" placeholder="Ej. Promo por el Día del Padre" required></div>
+        <div class="form-group" style="margin-bottom:14px"><label>Segmentación</label>
+          <select name="segmento"><option value="todos">Todos los Clientes Registrados</option><option value="activos">Clientes Activos</option><option value="barberos">Barberos</option></select></div>
+        <div class="form-group" style="margin-bottom:14px"><label>Canales de Difusión</label>
+          <div class="canal-checks">
+            <label><input type="checkbox" name="canal" value="correo" checked> ✉️ Correo Electrónico</label>
+            <label><input type="checkbox" name="canal" value="whatsapp"> 💬 WhatsApp Business</label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px"><label>Contenido HTML / Texto</label>
+          <textarea name="mensaje" rows="5" placeholder="Redacta tu promoción..."></textarea></div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px">📨 PROGRAMAR / ENVIAR AHORA</button>
+      </form>
+    </div>
+    <div class="form-card">
+      <h3>Plantillas de Sistema Automáticas</h3>
+      <p style="color:var(--cream-dim);font-size:.8rem;margin-bottom:14px">Mensajes transaccionales enviados automáticamente según acciones del usuario.</p>
+      <table class="plantillas-table">
+        <thead><tr><th>EVENTO TRIGGER</th><th>ESTADO</th><th>CONFIG.</th></tr></thead>
+        <tbody>
+          <tr><td>Confirmación de Cita Creada</td><td><span class="plantilla-estado plantilla-activa">Activa</span></td><td><button class="icon-btn" onclick="alert('Editor de plantilla próximamente')">✏️ Editar</button></td></tr>
+          <tr><td>Recordatorio de Cita (24h)</td><td><span class="plantilla-estado plantilla-activa">Activa</span></td><td><button class="icon-btn" onclick="alert('Editor de plantilla próximamente')">✏️ Editar</button></td></tr>
+          <tr><td>Cita Cancelada</td><td><span class="plantilla-estado plantilla-activa">Activa</span></td><td><button class="icon-btn" onclick="alert('Editor de plantilla próximamente')">✏️ Editar</button></td></tr>
+          <tr><td>Confirmación de Pago</td><td><span class="plantilla-estado plantilla-inactiva">Inactiva</span></td><td><button class="icon-btn" onclick="alert('Editor de plantilla próximamente')">✏️ Editar</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /marketing -->
+
+<!-- ═══════════════════ SISTEMA ═══════════════════ -->
+<div id="seccion-sistema" class="modulo-seccion oculto">
+  <div class="title-box"><h1>Sistema</h1><p>Gestión de Seguridad</p></div>
+
+  <div class="sistema-acciones">
+    <button class="btn-sistema" onclick="gestionRoles()">🔐 Gestión de Roles</button>
+    <button class="btn-sistema" onclick="toggleForm('panel-permisos')">🔑 Matriz de Permisos</button>
+    <button class="btn-sistema" onclick="generarRespaldo()">🗄️ Generar Respaldo Base de Datos</button>
+  </div>
+
+  <!-- Panel Gestión de Roles -->
+  <div id="panel-roles" class="form-card oculto" style="margin-bottom:16px">
+    <h3>🔐 Gestión de Roles — Resumen de Permisos</h3>
+    <table>
+      <thead><tr><th>ROL</th><th>PANEL ADMIN</th><th>VER CITAS</th><th>COBRAR</th><th>EDITAR CONTENIDO</th><th>VER LOGS</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-admin">Administrador</span></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td><span class="badge badge-gerente">Gerente Sucursal</span></td><td>⛔</td><td>✅</td><td>✅</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td><span class="badge badge-barbero">Barbero / Empleado</span></td><td>⛔</td><td>Solo propias</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td><span class="badge badge-cliente">Cliente</span></td><td>⛔</td><td>Solo propias</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+      </tbody>
+    </table>
+    <div class="form-actions" style="margin-top:12px">
+      <button type="button" class="btn-danger" onclick="cerrarModal('panel-roles')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Panel Matriz de Permisos -->
+  <div id="panel-permisos" class="form-card oculto" style="margin-bottom:16px">
+    <h3>🔑 Matriz de Permisos del Sistema</h3>
+    <table>
+      <thead><tr><th>MÓDULO</th><th>ADMIN</th><th>GERENTE</th><th>EMPLEADO</th><th>CLIENTE</th></tr></thead>
+      <tbody>
+        <tr><td>Dashboard Admin</td><td>✅</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td>Gestión Usuarios</td><td>✅</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td>Gestión Empleados</td><td>✅</td><td>✅</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td>Gestión Citas</td><td>✅</td><td>✅</td><td>Ver propias</td><td>Ver propias</td></tr>
+        <tr><td>Catálogo / Servicios</td><td>✅</td><td>⛔</td><td>⛔</td><td>Ver</td></tr>
+        <tr><td>Pagos y Caja</td><td>✅</td><td>✅</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td>Marketing / Web</td><td>✅</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+        <tr><td>System Logs</td><td>✅</td><td>⛔</td><td>⛔</td><td>⛔</td></tr>
+      </tbody>
+    </table>
+    <div class="form-actions" style="margin-top:12px">
+      <button type="button" class="btn-danger" onclick="cerrarModal('panel-permisos')">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Logs -->
+  <div class="table-container">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <h3 style="color:var(--green);font-size:1rem">● Visor de Bitácora (System Logs)</h3>
+      <div class="log-filters">
+        <input type="date" id="filtro-log-fecha" onchange="filtrarLogs()">
+        <select id="filtro-log-nivel" onchange="filtrarLogs()">
+          <option value="">Nivel: ALL</option>
+          <option value="INFO">INFO</option>
+          <option value="WARNING">WARNING</option>
+          <option value="ERROR">ERROR</option>
+        </select>
+        <button class="btn-sistema" style="padding:8px 14px" onclick="exportarLogs()">📥 Exportar CSV</button>
+      </div>
+    </div>
+    <table id="tabla-logs">
+      <thead><tr><th>TIMESTAMP</th><th>USUARIO</th><th>ACCIÓN</th><th>MÓDULO</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr data-nivel="{{ log.nivel }}" data-fecha="{{ log.fecha|date:'Y-m-d' }}">
+          <td class="log-timestamp">{{ log.fecha|date:"Y-m-d H:i:s" }}</td>
+          <td style="font-size:.82rem">{{ log.usuario_correo }}</td>
+          <td class="log-accion nivel-{{ log.nivel|lower }}">{{ log.accion }}</td>
+          <td class="log-modulo">{{ log.modulo }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="empty-msg">No hay logs registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div><!-- /sistema -->
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════
+// URL_BASE — AJUSTA el prefijo a tu config/urls.py
+// Mira la primera URL de la lista en el error 404.
+// En tu caso es 'panel-barberia/' así que:
+// ══════════════════════════════════════════════
+const URL_BASE = {
+  editar_usuario:        '/panel/usuario/editar/',
+  editar_empleado:       '/panel/empleado/editar/',
+  editar_sucursal:       '/panel/sucursal/editar/',
+  editar_servicio:       '/panel/servicio/editar/',
+  editar_complementario: '/panel/complementario/editar/',
+};
+
+const TITULOS = {
+  administracion:'Administración', operaciones:'Operaciones',
+  catalogo:'Catálogo', marketing:'Marketing y Web', sistema:'Sistemas'
+};
+
+function mostrarSeccion(nombre) {
+  document.querySelectorAll('.modulo-seccion').forEach(s => s.classList.add('oculto'));
+  document.getElementById('seccion-' + nombre).classList.remove('oculto');
+  document.getElementById('header-titulo').textContent = TITULOS[nombre] || nombre;
+  document.querySelectorAll('.dropdown-content a').forEach(a => a.classList.remove('active-menu'));
+  const m = document.getElementById('menu-' + nombre);
+  if (m) m.classList.add('active-menu');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleForm(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('oculto');
+  if (!el.classList.contains('oculto')) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function cerrarModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('oculto');
+}
+
+function filtrarTabla(inputId, tablaId) {
+  const filtro = inputId ? document.getElementById(inputId).value.toLowerCase() : '';
+  document.querySelectorAll('#' + tablaId + ' tbody tr').forEach(f => {
+    f.style.display = f.textContent.toLowerCase().includes(filtro) ? '' : 'none';
+  });
+}
+
+function filtrarPorColumna(valor, tablaId, colIndex) {
+  document.querySelectorAll('#' + tablaId + ' tbody tr').forEach(f => {
+    const c = f.cells[colIndex];
+    if (!c) return;
+    f.style.display = (!valor || c.textContent.includes(valor)) ? '' : 'none';
+  });
+}
+
+function filtrarTarjetas(texto) {
+  document.querySelectorAll('.sucursal-card').forEach(c => {
+    c.style.display = c.dataset.nombre.includes(texto.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function mktTab(btn, panelId) {
+  document.querySelectorAll('.mkt-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.mkt-panel').forEach(p => p.classList.add('oculto'));
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.remove('oculto');
+}
+
+function mostrarNombreArchivo(input, spanId) {
+  document.getElementById(spanId).textContent = input.files.length ? input.files[0].name : 'Sin archivos seleccionados';
+}
+
+function setSelectValue(id, value) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === value || sel.options[i].text === value) { sel.selectedIndex = i; break; }
+  }
+}
+
+// ── EDITAR USUARIO ──
+function abrirEditarUsuario(id, nombre, apellido, correo, rol, estado, cedula, telefono) {
+  document.getElementById('eu-nombre').value   = nombre;
+  document.getElementById('eu-apellido').value = apellido;
+  document.getElementById('eu-correo').value   = correo;
+  document.getElementById('eu-cedula').value   = cedula || '';
+  document.getElementById('eu-telefono').value = telefono || '';
+  setSelectValue('eu-rol', rol);
+  setSelectValue('eu-estado', estado);
+  document.getElementById('form-editar-usuario-form').action = URL_BASE.editar_usuario + id + '/';
+  const modal = document.getElementById('modal-editar-usuario');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── EDITAR EMPLEADO ──
+function abrirEditarEmpleado(id, nombre, apellido, cargo, sucursalId, estado, especialidad) {
+  document.getElementById('ee-nombre').value       = nombre;
+  document.getElementById('ee-apellido').value     = apellido;
+  document.getElementById('ee-especialidad').value = especialidad || '';
+  setSelectValue('ee-cargo', cargo);
+  setSelectValue('ee-estado', estado);
+  const sel = document.getElementById('ee-sucursal');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value == sucursalId) { sel.selectedIndex = i; break; }
+  }
+  document.getElementById('form-editar-empleado-form').action = URL_BASE.editar_empleado + id + '/';
+  const modal = document.getElementById('modal-editar-empleado');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── EDITAR SUCURSAL ──
+function abrirEditarSucursal(id, nombre, estado, dir, ciudad, prov, tel, correo, apertura, cierre) {
+  document.getElementById('es-nombre').value    = nombre;
+  document.getElementById('es-direccion').value = dir;
+  document.getElementById('es-ciudad').value    = ciudad;
+  document.getElementById('es-provincia').value = prov;
+  document.getElementById('es-telefono').value  = tel;
+  document.getElementById('es-correo').value    = correo;
+  document.getElementById('es-apertura').value  = apertura;
+  document.getElementById('es-cierre').value    = cierre;
+  setSelectValue('es-estado', estado);
+  document.getElementById('form-editar-sucursal-form').action = URL_BASE.editar_sucursal + id + '/';
+  const modal = document.getElementById('modal-editar-sucursal');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── EDITAR SERVICIO ──
+function abrirEditarServicio(id, nombre, cat, estado, dur, precio, desc) {
+  document.getElementById('esv-nombre').value      = nombre;
+  document.getElementById('esv-duracion').value    = dur;
+  document.getElementById('esv-precio').value      = precio;
+  document.getElementById('esv-descripcion').value = desc || '';
+  setSelectValue('esv-categoria', cat);
+  setSelectValue('esv-estado', estado);
+  document.getElementById('form-editar-servicio-form').action = URL_BASE.editar_servicio + id + '/';
+  const modal = document.getElementById('modal-editar-servicio');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── EDITAR COMPLEMENTARIO ──
+function abrirEditarComp(id, nombre, precio, duracion, estado, desc) {
+  document.getElementById('ec-nombre').value       = nombre;
+  document.getElementById('ec-precio').value       = precio;
+  document.getElementById('ec-duracion').value     = duracion;
+  document.getElementById('ec-descripcion').value  = desc || '';
+  setSelectValue('ec-estado', estado);
+  document.getElementById('form-editar-comp-form').action = URL_BASE.editar_complementario + id + '/';
+  const modal = document.getElementById('modal-editar-comp');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── VER POSTULACIÓN ──
+function abrirVerPostulacion(nombre, puesto, correo, telefono, motivacion) {
+  document.getElementById('vp-nombre').value    = nombre;
+  document.getElementById('vp-puesto').value    = puesto;
+  document.getElementById('vp-correo').value    = correo;
+  document.getElementById('vp-telefono').value  = telefono;
+  document.getElementById('vp-motivacion').value = motivacion || 'Sin motivación adjunta.';
+  const modal = document.getElementById('modal-ver-postulacion');
+  modal.classList.remove('oculto');
+  modal.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── SISTEMA ──
+function gestionRoles() {
+  const panel = document.getElementById('panel-roles');
+  panel.classList.toggle('oculto');
+  if (!panel.classList.contains('oculto')) panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function generarRespaldo() {
+  const btn = event.target;
+  btn.textContent = '⏳ Generando...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '✅ Respaldo generado';
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '🗄️ Generar Respaldo Base de Datos'; }, 3000);
+  }, 2000);
+}
+
+function filtrarLogs() {
+  const nivel = document.getElementById('filtro-log-nivel').value;
+  const fecha = document.getElementById('filtro-log-fecha').value;
+  document.querySelectorAll('#tabla-logs tbody tr').forEach(row => {
+    const matchNivel = !nivel || row.dataset.nivel === nivel;
+    const matchFecha = !fecha || row.dataset.fecha === fecha;
+    row.style.display = (matchNivel && matchFecha) ? '' : 'none';
+  });
+}
+
+function exportarLogs() {
+  const rows = document.querySelectorAll('#tabla-logs tbody tr:not([style*="none"])');
+  let csv = 'TIMESTAMP,USUARIO,ACCIÓN,MÓDULO\n';
+  rows.forEach(row => {
+    const cols = Array.from(row.cells).map(c => '"' + c.textContent.trim() + '"');
+    csv += cols.join(',') + '\n';
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'logs_barberhouse_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── PUNTO DE VENTA ──
+function cargarDatosCita(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('pv-cita-id').value = opt.value || '';
+  document.getElementById('pv-servicio').textContent = opt.dataset.servicio || 'Servicio';
+  const total = parseFloat(opt.dataset.total || 0).toFixed(2);
+  document.getElementById('pv-precio').textContent = '$' + total;
+  document.getElementById('pv-total').textContent  = '$' + total;
+}
+
+// ── TOTAL ESTIMADO CITA ADMIN ──
+function calcularTotalAdmin() {
+  let total = 0;
+  const svSel = document.getElementById('cita-servicio');
+  const svOpt = svSel.options[svSel.selectedIndex];
+  if (svOpt && svOpt.dataset.precio) total += parseFloat(svOpt.dataset.precio);
+  document.querySelectorAll('input[name="comp_ids"]:checked').forEach(cb => {
+    total += parseFloat(cb.dataset.precio || 0);
+  });
+  document.getElementById('total-admin').textContent = '$' + total.toFixed(2);
+}
+
+function deshabilitarBotones(form) {
+    const botones = form.querySelectorAll('button[type="submit"]');
+    botones.forEach(btn => btn.disabled = true);
+}
+
+function guardarSeguro(formId) {
+    const form = document.getElementById(formId);
+    if (form && form.action) {
+        form.submit();
+    } else {
+        alert("Error: No se pudo guardar.");
+    }
+}
+
+function cargarDatosCita(select) {
+  const option = select.options[select.selectedIndex];
+  if (!option.value) {
+    document.getElementById('pv-servicio').textContent = 'Servicio';
+    document.getElementById('pv-precio').textContent = '$0.00';
+    document.getElementById('pv-total').textContent = '$0.00';
+    document.getElementById('pv-cita-id').value = '';
+    return;
+  }
+  const servicio = option.dataset.servicio || 'N/A';
+  const total = option.dataset.total || '0';
+  document.getElementById('pv-servicio').textContent = servicio;
+  document.getElementById('pv-precio').textContent = '$' + parseFloat(total).toFixed(2);
+  document.getElementById('pv-total').textContent = '$' + parseFloat(total).toFixed(2);
+  document.getElementById('pv-cita-id').value = option.value;
+}
+
+function calcularTotalAdmin() {
+  const servicio = document.getElementById('cita-servicio');
+  const option = servicio.options[servicio.selectedIndex];
+  let total = option.dataset.precio ? parseFloat(option.dataset.precio) : 0;
+  
+  const complementarios = document.querySelectorAll('input[name="comp_ids"]:checked');
+  complementarios.forEach(c => {
+    total += parseFloat(c.dataset.precio) || 0;
+  });
+  
+  document.getElementById('total-admin').textContent = '$' + total.toFixed(2);
+}
+
+function filtrarLogs() {
+  const fecha = document.getElementById('filtro-log-fecha').value;
+  const nivel = document.getElementById('filtro-log-nivel').value;
+  
+  document.querySelectorAll('#tabla-logs tbody tr').forEach(row => {
+    const rowFecha = row.dataset.fecha || '';
+    const rowNivel = row.dataset.nivel || '';
+    
+    const matchFecha = !fecha || rowFecha === fecha;
+    const matchNivel = !nivel || rowNivel === nivel;
+    
+    row.style.display = (matchFecha && matchNivel) ? '' : 'none';
+  });
+}
+
+function exportarLogs() {
+  const rows = [];
+  rows.push(['TIMESTAMP', 'USUARIO', 'ACCIÓN', 'MÓDULO']);
+  
+  document.querySelectorAll('#tabla-logs tbody tr:not([style*="display: none"])').forEach(row => {
+    const cells = row.querySelectorAll('td');
+    rows.push([cells[0].textContent, cells[1].textContent, cells[2].textContent, cells[3].textContent]);
+  });
+  
+  let csv = rows.map(r => r.map(c => '"' + c.replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'logs_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// ══════════════════════════════════════════════
+// GRÁFICOS DE INGRESOS Y SERVICIOS
+// ══════════════════════════════════════════════
+if (document.getElementById('ingresos-data') && document.getElementById('servicios-data')) {
+    const ingresos = JSON.parse(document.getElementById('ingresos-data').textContent);
+    const servicios = JSON.parse(document.getElementById('servicios-data').textContent);
+
+    // Gráfico de Barras
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: ingresos.map(i => i.mes),
+            datasets: [{ 
+                label: 'Ingresos ($)', 
+                data: ingresos.map(i => i.total), 
+                backgroundColor: '#A52A2A',
+                borderColor: '#D2691E',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Gráfico Circular
+    new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: {
+            labels: servicios.map(s => s.nombre),
+            datasets: [{ 
+                data: servicios.map(s => s.cantidad), 
+                backgroundColor: ['#D2691E', '#8B4513', '#A0522D', '#CD853F', '#DEB887'],
+                borderColor: '#140208',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+</script>
+
+</body>
+</html>

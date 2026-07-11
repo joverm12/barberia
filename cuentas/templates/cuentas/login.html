@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión - The Barber House</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<div class="main-container">
+    <div class="login-panel">
+        <form method="POST" class="login-form">
+            {% csrf_token %}
+            
+            <div class="logo-container">
+                <img src="{% static 'images/logo.png' %}" alt="The Barber House Logo">
+            </div>
+
+            <h2>Iniciar Sesión</h2>
+            
+            <input type="email" name="correo" placeholder="Correo electrónico" required>
+            <input type="password" name="contrasenia" placeholder="Contraseña*" required>
+            
+            <div class="form-options">
+                <a href="#">¿Olvidaste tu contraseña?</a>
+            </div>
+            
+            <button type="submit">INGRESAR</button>
+            
+            {% if error %}
+                <p class="error-message">{{ error }}</p>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="image-panel"></div>
+</div>
+
+</body>
+</html>

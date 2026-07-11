@@ -1,0 +1,82 @@
+/* 1. Reset para eliminar bordes blancos del navegador */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+
+/* 2. Contenedor principal que divide 50/50 */
+.main-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 3. Panel Izquierdo: Login */
+.login-panel {
+    flex: 1; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fdfaf6;
+}
+
+.login-form {
+    width: 400px; /* Ajustado para que el contenido respire mejor */
+    padding: 20px;
+}
+
+/* 4. Panel Derecho: Imagen */
+.image-panel {
+    flex: 1;
+    background: url('/static/images/hero_bg.jpg') no-repeat center center;
+    background-size: cover;
+}
+
+/* 5. Estilo de Inputs y Botones (Con medidas Figma) */
+input {
+    width: 100%;
+    padding: 18px; /* Padding aumentado */
+    margin: 12px 0;
+    border: 1px solid #dcdcdc;
+    border-radius: 50px;
+    font-size: 1.1rem; /* Letra más grande */
+    outline: none;
+}
+
+input:focus { border-color: #7a1d2e; }
+
+button {
+    width: 100%;
+    padding: 18px; /* Padding aumentado */
+    background-color: #7a1d2e;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2rem; /* Tamaño de fuente del botón */
+    margin-top: 25px;
+    transition: background 0.3s ease;
+}
+
+button:hover { background-color: #5a1522; }
+
+/* 6. Detalles finales: Logo, Título y Errores (Con medidas Figma) */
+.logo-container { text-align: center; margin-bottom: 30px; }
+.logo-container img { width: 220px; } /* Logo agrandado */
+
+h2 { 
+    text-align: center; 
+    margin-bottom: 35px; 
+    color: #333; 
+    font-size: 2rem; /* Tamaño de título Figma */
+}
+
+.form-options { text-align: right; margin-bottom: 15px; }
+.form-options a { color: #7a1d2e; font-size: 0.9rem; text-decoration: none; }
+.form-options a:hover { text-decoration: underline; }
+
+.error-message {
+    color: #d9534f;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}
