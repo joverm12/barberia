@@ -23,12 +23,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!5a5#9^3m#@!4(k06#-4h_u^)_=g1)s(lz^yd#rclea8e36e-@'
+# Ahora se lee desde variable de entorno. En local, ponla en tu archivo .env
+# En Render, se configura en el panel de Environment.
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-!5a5#9^3m#@!4(k06#-4h_u^)_=g1)s(lz^yd#rclea8e36e-@'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()
+]
+
+# Render asigna un hostname externo automáticamente en esta variable
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+if DEBUG:
+    ALLOWED_HOSTS += ['localhost', '127.0.0.1']
+
+CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS if h not in ('localhost', '127.0.0.1')]
 
 
 # Application definition
@@ -50,6 +67,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,12 +99,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Si existe DATABASE_URL (Render la crea automáticamente al conectar un
+# servicio de PostgreSQL), la usamos. Si no, seguimos usando SQLite local
+# para desarrollo.
+import dj_database_url
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -121,13 +154,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-# ... (Todo tu código anterior hasta STATIC_URL)
-
-# settings.py
-
-STATIC_URL = 'static/'
-
-# ESTA ES LA LÍNEA QUE TE FALTA:
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_DIRS = [
@@ -135,17 +162,22 @@ STATICFILES_DIRS = [
     BASE_DIR / 'publico' / 'static',
 ]
 
+# WhiteNoise sirve los estáticos de forma comprimida y con cache-busting
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ── CLOUDINARY ──────────────────────────────────────────
+# Las credenciales YA NO van escritas aquí. Se leen de variables de entorno:
+# - En local: archivo .env (ver .env.example)
+# - En Render: pestaña "Environment" del servicio
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'drhbivng5',
-    'API_KEY': '945383893211668',
-    'API_SECRET': 'jKPUVFiNtu_tC-p58KrjqwkhKQ8'
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
 }
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# Configuración de archivos multimedia (imágenes, CVs, etc.)
-import os
+
+# Archivos multimedia (imágenes, CVs, etc.) subidos por usuarios
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -164,8 +196,4 @@ SESSION_COOKIE_NAME = 'sessionid'
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-
-# Mantenemos estáticos locales (CSS, JS)
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
