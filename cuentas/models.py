@@ -1,4 +1,5 @@
 from django.db import models
+from cloudinary.models import CloudinaryField # Importar esto
 
 class Usuario(models.Model):
     id_usuario = models.AutoField(primary_key=True)
@@ -26,6 +27,7 @@ class Sucursal(models.Model):
     gps_longitud = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
     hora_apertura = models.TimeField()
     hora_cierre = models.TimeField()
+    imagen = CloudinaryField('image', blank=True, null=True)
     class Meta:
         db_table = 'sucursal'
 
@@ -63,7 +65,8 @@ class Servicio(models.Model):
     duracion = models.IntegerField()
     categoria = models.CharField(max_length=100, null=True, blank=True)
     estado = models.CharField(max_length=20, default='Activo')
-    foto = models.ImageField(upload_to='servicios/', null=True, blank=True)
+    nombre = models.CharField(max_length=100)
+    imagen = CloudinaryField('image', blank=True, null=True)
     class Meta:
         db_table = 'servicio'
 

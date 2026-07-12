@@ -34,13 +34,20 @@
 </section>
 
 <!-- SERVICIOS DESTACADOS -->
+<!-- SERVICIOS DESTACADOS -->
 <section class="section">
   <p class="section-title">Nuestros Servicios</p>
   <p class="section-sub">Los favoritos de nuestros clientes, con productos de primera calidad</p>
   <div class="servicios-grid">
     {% for sv in servicios %}
     <div class="servicio-card">
-      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">✂️</div>
+      <div style="height:200px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        {% if sv.imagen %}
+          <img src="{{ sv.imagen.url }}" alt="{{ sv.nombre }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+          <div style="font-size:3rem">✂️</div>
+        {% endif %}
+      </div>
       <div class="servicio-card-body">
         <h3>{{ sv.nombre }}</h3>
         <p>{{ sv.descripcion|default:"Servicio de alta calidad con los mejores profesionales." }}</p>
@@ -51,21 +58,7 @@
       </div>
     </div>
     {% empty %}
-    <div class="servicio-card">
-      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">✂️</div>
-      <div class="servicio-card-body"><h3>Perfilado & Ritual de Barba</h3><p>Personalizado, al igual que con tijeras premium con tratamiento fortalecientes.</p></div>
-      <div class="servicio-card-footer"><span class="precio-tag">$18.00</span><span class="duracion-tag">30 min</span></div>
-    </div>
-    <div class="servicio-card">
-      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">💆</div>
-      <div class="servicio-card-body"><h3>Mascarilla Facial Purificante</h3><p>Aplicación de mascarilla de arcilla negra para desintoxicar los poros y remover impurezas de la piel.</p></div>
-      <div class="servicio-card-footer"><span class="precio-tag">$10.00</span><span class="duracion-tag">20 min</span></div>
-    </div>
-    <div class="servicio-card">
-      <div style="height:200px;background:rgba(50,5,15,.7);display:flex;align-items:center;justify-content:center;font-size:3rem">⭐</div>
-      <div class="servicio-card-body"><h3>Pack Imperial</h3><p>La experiencia completa de la casa con servicios premium integrados.</p></div>
-      <div class="servicio-card-footer"><span class="precio-tag">$35.00</span><span class="duracion-tag">75 min</span></div>
-    </div>
+    <p>No hay servicios destacados configurados.</p>
     {% endfor %}
   </div>
 </section>

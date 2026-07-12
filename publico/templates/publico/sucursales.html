@@ -12,7 +12,13 @@
   <div class="sucursales-pub-grid" style="padding:0">
     {% for s in sucursales %}
     <div class="sucursal-pub-card">
-      <div class="sucursal-pub-img">🏪</div>
+      <div class="sucursal-pub-img">
+        {% if s.imagen %}
+            <img src="{{ s.imagen.url }}" alt="{{ s.nombre }}" style="width:100%; height:200px; object-fit:cover; border-radius:8px 8px 0 0;">
+        {% else %}
+            <div style="height:200px; display:flex; align-items:center; justify-content:center; background:#222; color:#fff;">🏪</div>
+        {% endif %}
+      </div>
       <div class="sucursal-pub-body">
         <span class="sucursal-pub-badge {% if s.estado == 'Activa' %}badge-activa{% else %}badge-inactiva{% endif %}">{{ s.estado|upper }}</span>
         <h3>{{ s.nombre }}</h3>
@@ -21,8 +27,7 @@
         <p>✉️ {{ s.correo }}</p>
         <p>🕐 Lun-Sáb {{ s.hora_apertura|time:"H:i" }} - {{ s.hora_cierre|time:"H:i" }}</p>
         {% if s.gps_latitud %}
-        <a href="https://maps.google.com/?q={{ s.gps_latitud }},{{ s.gps_longitud }}"
-           target="_blank" style="color:var(--gold);font-size:.8rem;margin-top:8px;display:block">📌 Ver en mapa</a>
+        <a href="https://maps.google.com/?q={{ s.gps_latitud }},{{ s.gps_longitud }}" target="_blank" style="color:var(--gold);font-size:.8rem;margin-top:8px;display:block">📌 Ver en mapa</a>
         {% endif %}
       </div>
     </div>

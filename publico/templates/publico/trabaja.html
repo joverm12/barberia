@@ -1,4 +1,5 @@
 {% extends 'publico/base_publico.html' %}
+{% load static %}
 {% block title %}Trabaja con Nosotros — Barber House{% endblock %}
 {% block nav_trabaja %}active{% endblock %}
 
@@ -20,7 +21,7 @@
     <h2>¡Únete a nuestro equipo!</h2>
     <blockquote>"En The Barber House no solo cortamos cabello; creamos experiencias. Si tienes pasión por la estética, atención al detalle y ganas de crecer, estamos buscándote."</blockquote>
   </div>
-  <div style="display:flex;align-items:center;justify-content:center;font-size:8rem;opacity:.3">✂️</div>
+  <div style="display:flex;align-items:center;justify-content:center;font-size:8rem;opacity:.3"></div>
 </div>
 
 <!-- BENEFICIOS -->
@@ -86,7 +87,8 @@
 <div class="postulacion-form-wrap" id="form-postulacion">
   <div class="form-postulacion">
     <h2>Postulación Directa</h2>
-    <form method="post" action="{% url 'postular' %}">
+    <!-- Agregado enctype para subir archivos -->
+    <form method="post" action="{% url 'postular' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="fp-grid">
         <div class="fp-group">
@@ -127,10 +129,11 @@
         </div>
         <div class="fp-group fp-full">
           <label>Adjuntar Hoja de Vida/CV</label>
-          <input type="hidden" name="cv_url" value="pendiente">
-          <div class="drop-zone">
+          <div class="drop-zone" onclick="document.getElementById('file-cv').click()" style="cursor:pointer;">
             <div style="font-size:2rem;margin-bottom:8px">📤</div>
             <p>Arrastra tu CV aquí o <span style="color:#5a0018;text-decoration:underline">búscalo en tus archivos</span></p>
+            <!-- Input de archivo real -->
+            <input type="file" id="file-cv" name="cv_file" style="display:none" accept=".pdf,.doc,.docx" required>
             <small>Soporta PDF, Word (.doc, .docx) de hasta 5MB</small>
           </div>
         </div>
@@ -147,7 +150,7 @@ function filtrarVacantes() {
   const q   = document.getElementById('buscar-vacante').value.toLowerCase();
   const cat = document.getElementById('filtro-cat').value;
   document.querySelectorAll('.vacante-card').forEach(c => {
-    const matchQ   = c.textContent.toLowerCase().includes(q);
+    const matchQ  = c.textContent.toLowerCase().includes(q);
     const matchCat = !cat || c.dataset.cat === cat;
     c.style.display = (matchQ && matchCat) ? '' : 'none';
   });

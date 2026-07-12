@@ -10,6 +10,9 @@ import json
 from django.db import transaction
 from cuentas.models import Cita
 from cuentas.models import ConfiguracionSistema
+from django.shortcuts import render, redirect
+from django.core.files.storage import FileSystemStorage
+from cuentas.models import Sucursal, Postulacion
 # ── INICIO ──────────────────────────────────────────
 def inicio(request):
     servicios_destacados = Servicio.objects.filter(estado='Activo')[:3]
@@ -328,3 +331,30 @@ def api_empleados_sucursal(request):
     ).select_related('usuario')
     data = [{'id': e.id_empleado, 'nombre': f"{e.usuario.nombre} {e.usuario.apellido}"} for e in empleados]
     return HttpResponse(json.dumps(data), content_type='application/json')
+
+def postular(request):
+    if request.method == 'POST':
+        # 1. Procesar el archivo manualmente
+        archivo = request.FILES.get('cv_file')
+        cv_ruta = 'pendiente'
+        if archivo:
+            fs = FileSystemStorage()
+            nombre_archivo = fs.save(f'cvs/{archivo.name}', archivo)
+            cv_ruta = fs.url(nombre_archivo)
+
+        # 2. Guardar en la base de datos
+        Postulacion.objects.create(
+            puesto_aplica=request.POST.get('puesto_aplica'),
+            sucursal_interes_id=request.POST.get('sucursal_interes'),
+            nombre_candidato=request.POST.get('nombre_candidato'),
+            correo_candidato=request.POST.get('correo_candidato'),
+            telefono_contacto=request.POST.get('telefono_contacto'),
+            portafolio_instagram=request.POST.get('portafolio_instagram'),
+            motivacion=request.POST.get('motivacion'),
+            cv_url=cv_ruta  # Guardamos la ruta del archivo aquí
+        )
+        return render(request, 'publico/trabaja.html', {'enviado': True})
+    
+    # Si es GET, necesitamos enviar las sucursales al template
+    sucursales = Sucursal.objects.all()
+    return render(request, 'publico/trabaja.html', {'sucursales': sucursales})

@@ -151,14 +151,6 @@
         <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" placeholder="correo@empresa.com" required></div>
         <div class="form-group"><label>Contraseña inicial</label><input type="password" name="contrasenia" placeholder="barber1234 por defecto"></div>
         <div class="form-group form-col-full"><label>Dirección</label><input type="text" name="direccion" placeholder="Calle principal y transversal..."></div>
-        <div class="form-group">
-          <label>Fotografía de Perfil</label>
-          <div class="file-input-row">
-            <label class="file-label" for="foto-empleado">Seleccionar archivo</label>
-            <span class="file-name" id="foto-empleado-name">Sin archivos seleccionados</span>
-            <input type="file" id="foto-empleado" name="foto" accept="image/*" onchange="mostrarNombreArchivo(this,'foto-empleado-name')">
-          </div>
-        </div>
         <div class="form-group"><label>Cargo <span class="req">*</span></label>
           <select name="cargo"><option value="">Seleccione...</option><option>Barbero</option><option>Estilista</option><option>Recepcionista</option><option>Peluquero</option></select></div>
         <div class="form-group"><label>Sucursal Asignada <span class="req">*</span></label>
@@ -238,37 +230,50 @@
     </form>
   </div>
 
-  <!-- SUCURSALES -->
-  <div class="title-box" style="margin-top:32px"><h1>Sucursales</h1><p>Gestión de Locales</p></div>
-  <div class="search-box">
-    <input type="text" placeholder="🔍 Buscar sucursal..." onkeyup="filtrarTarjetas(this.value)">
-    <button class="btn-añadir" onclick="toggleForm('form-nueva-sucursal')">+ AÑADIR NUEVA SUCURSAL</button>
-  </div>
+<!-- SUCURSALES -->
+ <div class="title-box" style="margin-top:32px"><h1>Sucursales</h1><p>Gestión de Locales</p></div>
+ <div class="search-box">
+   <input type="text" placeholder="🔍 Buscar sucursal..." onkeyup="filtrarTarjetas(this.value)">
+   <button class="btn-añadir" onclick="toggleForm('form-nueva-sucursal')">+ AÑADIR NUEVA SUCURSAL</button>
+ </div>
 
-  <div id="form-nueva-sucursal" class="form-card oculto">
-    <h3>Formulario: Detalles de la Sucursal</h3>
-    <form method="post" action="{% url 'crear_sucursal' %}">
-      {% csrf_token %}
-      <div class="form-grid">
-        <div class="form-group form-col-2"><label>Nombre <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Barber House - Centro" required></div>
-        <div class="form-group"><label>Estado</label><select name="estado"><option value="Activa">Activa</option><option value="Inactiva">Inactiva</option></select></div>
-        <div class="form-group form-col-full"><label>Dirección completa <span class="req">*</span></label><input type="text" name="direccion_completa" placeholder="Calle principal y nomenclatura..." required></div>
-        <div class="form-group"><label>Ciudad <span class="req">*</span></label><input type="text" name="ciudad" placeholder="Ej. Quito" required></div>
-        <div class="form-group"><label>Provincia <span class="req">*</span></label><input type="text" name="provincia" placeholder="Ej. Pichincha" required></div>
-        <div class="form-group"><label>Teléfono <span class="req">*</span></label><input type="text" name="telefono" placeholder="Solo números" required></div>
-        <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" placeholder="correo@sucursal.com" required></div>
-        <div class="form-group"><label>GPS Latitud</label><input type="text" name="gps_latitud" placeholder="-0.1834"></div>
-        <div class="form-group"><label>GPS Longitud</label><input type="text" name="gps_longitud" placeholder="-78.4832"></div>
-        <div class="form-group form-col-full"><label>Horario <span class="req">*</span></label>
+ <div id="form-nueva-sucursal" class="form-card oculto">
+   <h3>Formulario: Detalles de la Sucursal</h3>
+   <!-- Corregido: la etiqueta form cierra al final del bloque -->
+   <form method="post" action="{% url 'crear_sucursal' %}" enctype="multipart/form-data">
+     {% csrf_token %}
+     <div class="form-grid">
+       <div class="form-group form-col-2"><label>Nombre <span class="req">*</span></label><input type="text" name="nombre" placeholder="Ej. Barber House - Centro" required></div>
+       <div class="form-group"><label>Estado</label><select name="estado"><option value="Activa">Activa</option><option value="Inactiva">Inactiva</option></select></div>
+       <div class="form-group form-col-full"><label>Dirección completa <span class="req">*</span></label><input type="text" name="direccion_completa" placeholder="Calle principal y nomenclatura..." required></div>
+       <div class="form-group"><label>Ciudad <span class="req">*</span></label><input type="text" name="ciudad" placeholder="Ej. Quito" required></div>
+       <div class="form-group"><label>Provincia <span class="req">*</span></label><input type="text" name="provincia" placeholder="Ej. Pichincha" required></div>
+       <div class="form-group"><label>Teléfono <span class="req">*</span></label><input type="text" name="telefono" placeholder="Solo números" required></div>
+       <div class="form-group"><label>Correo <span class="req">*</span></label><input type="email" name="correo" placeholder="correo@sucursal.com" required></div>
+       <div class="form-group"><label>GPS Latitud</label><input type="text" name="gps_latitud" placeholder="-0.1834"></div>
+       <div class="form-group"><label>GPS Longitud</label><input type="text" name="gps_longitud" placeholder="-78.4832"></div>
+       
+       <div class="form-group form-col-full">
+          <label>Horario <span class="req">*</span></label>
           <div class="horario-row"><span>De</span><input type="time" name="hora_apertura" value="08:00"><span>hasta</span><input type="time" name="hora_cierre" value="20:00"></div>
+       </div>
+
+       <div class="form-group form-col-full">
+         <label>Fotografía de la Sucursal</label>
+         <div class="file-input-row" style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+           <label class="file-label" for="foto-sucursal" style="cursor: pointer; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 4px;">Seleccionar archivo</label>
+           <span class="file-name" id="foto-sucursal-name" style="font-size: 0.8rem; color: #ccc;">Sin archivos seleccionados</span>
+           <input type="file" id="foto-sucursal" name="foto_sucursal" style="display: none;" onchange="document.getElementById('foto-sucursal-name').textContent = this.files[0].name">
         </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn-danger" onclick="toggleForm('form-nueva-sucursal')">Cancelar</button>
-        <button type="submit" class="btn-primary">💾 Guardar Sucursal</button>
-      </div>
-    </form>
-  </div>
+     </div>
+     </div>
+     
+     <div class="form-actions">
+       <button type="button" class="btn-danger" onclick="toggleForm('form-nueva-sucursal')">Cancelar</button>
+       <button type="submit" class="btn-primary">💾 Guardar Sucursal</button>
+     </div>
+   </form>
+ </div>
 
   <div class="sucursales-grid">
     {% for s in sucursales %}
@@ -603,24 +608,33 @@
     </table>
   </div>
 
-  <!-- Modal editar complementario -->
-  <div id="modal-editar-comp" class="form-card oculto" style="margin-top:16px">
-    <h3>✏️ Editar Complementario</h3>
-    <form method="post" id="form-editar-comp-form" action="">
-      {% csrf_token %}
-      <div class="form-grid">
-        <div class="form-group form-col-2"><label>Nombre</label><input type="text" name="nombre" id="ec-nombre"></div>
-        <div class="form-group"><label>Precio ($)</label><input type="number" name="precio" id="ec-precio" step="0.01"></div>
-        <div class="form-group"><label>Duración Extra (min)</label><input type="number" name="duracion_extra" id="ec-duracion"></div>
-        <div class="form-group"><label>Estado</label><select name="estado" id="ec-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
-        <div class="form-group form-col-full"><label>Descripción</label><textarea name="descripcion" id="ec-descripcion"></textarea></div>
+  <!-- Modal editar servicio -->
+<div id="modal-editar-servicio" class="form-card oculto" style="margin-top:16px">
+  <h3>✏️ Editar Servicio</h3>
+  <!-- IMPORTANTE: Añadir enctype para subir archivos -->
+  <form method="post" id="form-editar-servicio-form" action="" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="form-group form-col-2"><label>Nombre</label><input type="text" name="nombre" id="esv-nombre"></div>
+      <div class="form-group"><label>Categoría</label><select name="categoria" id="esv-categoria"><option>Barbería</option><option>Estética</option><option>Packs Promocionales</option></select></div>
+      <div class="form-group"><label>Estado</label><select name="estado" id="esv-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+      <div class="form-group"><label>Duración (min)</label><input type="number" name="duracion" id="esv-duracion"></div>
+      <div class="form-group"><label>Precio ($)</label><input type="number" name="precio" id="esv-precio" step="0.01"></div>
+      
+      <!-- NUEVO: Campo para cambiar la foto al editar -->
+      <div class="form-group form-col-full">
+        <label>Cambiar Fotografía</label>
+        <input type="file" name="foto">
       </div>
-      <div class="form-actions">
-        <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-comp')">Cancelar</button>
-        <button type="button" class="btn-primary" onclick="guardarSeguro('form-editar-comp-form')">💾 Guardar Cambios</button>
-      </div>
-    </form>
-  </div>
+
+      <div class="form-group form-col-full"><label>Descripción</label><textarea name="descripcion" id="esv-descripcion"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn-danger" onclick="cerrarModal('modal-editar-servicio')">Cancelar</button>
+      <button type="submit" class="btn-primary">💾 Guardar Cambios</button>
+    </div>
+  </form>
+</div>
 </div><!-- /catalogo -->
 
 <!-- ═══════════════════ MARKETING ═══════════════════ -->

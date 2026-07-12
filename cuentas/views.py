@@ -232,6 +232,7 @@ def crear_sucursal(request):
             gps_longitud=request.POST.get('gps_longitud') or None,
             hora_apertura=request.POST.get('hora_apertura') or '08:00',
             hora_cierre=request.POST.get('hora_cierre') or '20:00',
+            imagen=request.FILES.get('foto_sucursal'),
         )
         registrar_log(request, 'CREATE_SUCURSAL', 'M3-Cat')
     return redirect('admin_dashboard')
@@ -250,6 +251,9 @@ def editar_sucursal(request, id):
         s.hora_apertura      = request.POST.get('hora_apertura') or s.hora_apertura
         s.hora_cierre        = request.POST.get('hora_cierre') or s.hora_cierre
         s.save()
+        if request.FILES.get('foto_sucursal'):
+           s.imagen = request.FILES.get('foto_sucursal')
+        s.save()
         registrar_log(request, f'UPDATE_SUCURSAL [id:{id}]', 'M3-Cat')
     return redirect('admin_dashboard')
 
@@ -263,21 +267,26 @@ def eliminar_sucursal(request, id):
 def crear_servicio(request):
     if not es_admin(request): return redirect('login')
     if request.method == 'POST':
-        Servicio.objects.create(
+        print("FILES recibidos:", request.FILES) # <-- Mira la consola del servidor
+        
+        # Asegúrate que el campo se llame 'imagen' según tu nuevo models.py
+        nuevo_servicio = Servicio.objects.create(
             nombre=request.POST.get('nombre', ''),
             categoria=request.POST.get('categoria', ''),
             estado=request.POST.get('estado', 'Activo'),
             duracion=request.POST.get('duracion') or 30,
             precio=request.POST.get('precio') or 0,
             descripcion=request.POST.get('descripcion', ''),
-            foto=request.FILES.get('foto'),
+            imagen=request.FILES.get('foto'), # Asegúrate que el input name sea 'foto'
         )
+        print("Servicio guardado con imagen:", nuevo_servicio.imagen)
         registrar_log(request, 'CREATE_SERVICIO', 'M4-Cat')
     return redirect('admin_dashboard')
 
 def editar_servicio(request, id):
     if not es_admin(request): return redirect('login')
     s = get_object_or_404(Servicio, id_servicio=id)
+    
     if request.method == 'POST':
         s.nombre      = request.POST.get('nombre', s.nombre)
         s.categoria   = request.POST.get('categoria', s.categoria)
@@ -285,10 +294,15 @@ def editar_servicio(request, id):
         s.duracion    = request.POST.get('duracion') or s.duracion
         s.precio      = request.POST.get('precio') or s.precio
         s.descripcion = request.POST.get('descripcion', s.descripcion)
+        
+        # CAMBIO: Usamos 'imagen' (que es tu CloudinaryField) 
+        # en lugar de 'foto'
         if request.FILES.get('foto'):
-            s.foto = request.FILES.get('foto')
+            s.imagen = request.FILES.get('foto')
+            
         s.save()
         registrar_log(request, f'UPDATE_SERVICIO [id:{id}]', 'M4-Cat')
+        
     return redirect('admin_dashboard')
 
 def eliminar_servicio(request, id):
