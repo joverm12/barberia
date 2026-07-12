@@ -1,11 +1,15 @@
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from django.db.models import Sum, Count
+from django.db.models import Sum
+from django.db import transaction
 import json
+from .models import ConfiguracionSistema
 from .models import (ServicioComplementario, Usuario, Empleado, Sucursal, Servicio, Pack, Cita,
                      Cliente, Pago, Factura, Postulacion, Resena,
                      ContenidoWeb, LogSistema, Notificacion)
@@ -74,7 +78,9 @@ def admin_dashboard(request):
     postulaciones = Postulacion.objects.select_related('sucursal_interes').all().order_by('-fecha_postulacion')
     contenido_inicio = ContenidoWeb.objects.filter(seccion='inicio').first()
     logs = LogSistema.objects.all().order_by('-fecha')[:50]
-    
+    config = ConfiguracionSistema.objects.first()
+    if not config:
+        config = ConfiguracionSistema.objects.create(iva_porcentaje=15.00)
     
     ingresos_por_mes = Pago.objects.filter(fecha__year=timezone.now().year)\
         .annotate(mes=TruncMonth('fecha'))\
@@ -89,9 +95,9 @@ def admin_dashboard(request):
 
     # Convertimos a JSON
     ingresos_data = [{'mes': i['mes'].strftime('%B'), 'total': float(i['total'])} for i in ingresos_por_mes]
-    servicios_data = [{'nombre': s['servicio__nombre'], 'cantidad': s['cantidad']} for s in servicios_populares]
+    servicios_data = [{'nombre': str(s['servicio__nombre']), 'cantidad': int(s['cantidad'])} for s in servicios_populares]
 
-    # 3. UNIFICAMOS TODO EN UN SOLO CONTEXTO
+    # 3. UNIFICAMOS TODo EN UN SOLO CONTEXTO
     context = {
         'usuarios': usuarios, 'empleados': empleados, 'sucursales': sucursales,
         'servicios': servicios, 'complementarios': complementarios, 'packs': packs,
@@ -104,11 +110,11 @@ def admin_dashboard(request):
         'sucursales_lista': sucursales,
         'servicios_lista': servicios,
         'empleados_lista': empleados,
+        'config': config,
         # AGREGAMOS LOS DATOS PARA LOS GRÁFICOS AQUÍ:
-        'ingresos_json': ingresos_data,
-        'servicios_json': servicios_data,
+        'ingresos_json': json.dumps(ingresos_data),
+        'servicios_json': json.dumps(servicios_data),
     }
-
     return render(request, 'admin/admin_dashboard.html', context)
     
 # ── USUARIOS ─────────────────────────────────────────────
@@ -369,18 +375,38 @@ def registrar_pago(request):
     if not es_admin(request): return redirect('login')
     if request.method == 'POST':
         cita_id = request.POST.get('cita_id')
-        metodo  = request.POST.get('metodo_pago', 'Efectivo')
-        cita    = get_object_or_404(Cita, id_cita=cita_id)
-        monto   = cita.total or 0
-        pago    = Pago.objects.create(cita=cita, monto=monto, metodo_pago=metodo)
-        ultimo  = Factura.objects.count() + 1
-        Factura.objects.create(
-            pago=pago, numero=f'FAC-{ultimo:04d}',
-            fecha=timezone.now().date(), subtotal=monto, total=monto
-        )
-        cita.estado = 'Finalizada'
-        cita.save()
-        registrar_log(request, f'REGISTRAR_PAGO [cita:CT-{cita_id}]', 'M6-Caja')
+        metodo = request.POST.get('metodo_pago', 'Efectivo')
+        
+        # Obtenemos la cita
+        cita = get_object_or_404(Cita, id_cita=cita_id)
+        
+        # Evitar pagos duplicados si alguien hace doble clic
+        if Pago.objects.filter(cita=cita).exists():
+            return redirect('admin_dashboard') 
+            
+        monto = cita.total or 0
+        
+        with transaction.atomic():
+            # Crear Pago
+            pago = Pago.objects.create(cita=cita, monto=monto, metodo_pago=metodo)
+            
+            # Crear Factura
+            # Nota: Asegúrate que el modelo Factura tenga los campos correctos
+            ultimo = Factura.objects.count() + 1
+            Factura.objects.create(
+                pago=pago, 
+                numero=f'FAC-{ultimo:04d}',
+                fecha=timezone.now().date(), 
+                subtotal=monto, 
+                total=monto
+            )
+            
+            # Cambiar estado a 'Finalizada' solo cuando se paga
+            cita.estado = 'Finalizada'
+            cita.save()
+            
+            registrar_log(request, f'REGISTRAR_PAGO [cita:CT-{cita_id}]', 'M6-Caja')
+            
     return redirect('admin_dashboard')
 
 # ── RESEÑAS ──────────────────────────────────────────────
@@ -455,3 +481,85 @@ def exportar_reporte_pdf(request):
     p.showPage()
     p.save()
     return response
+
+def generar_reporte(request):
+    tipo = request.GET.get('tipo')
+    inicio = request.GET.get('fecha_inicio')
+    fin = request.GET.get('fecha_fin')
+
+    # Ejemplo básico de lógica para Reporte de Ingresos
+    if tipo == 'ingresos':
+        datos = Pago.objects.filter(fecha__range=[inicio, fin]).values('fecha').annotate(total=Sum('monto'))
+        return JsonResponse(list(datos), safe=False)
+    
+    # ... agrega lógica para 'citas' y 'empleados'
+    return JsonResponse({'error': 'Tipo no válido'}, status=400)
+
+def descargar_pdf(request):
+    tipo = request.GET.get('tipo')
+    inicio = request.GET.get('inicio')
+    fin = request.GET.get('fin')
+    
+    # Crear respuesta HTTP con tipo de contenido PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="reporte_{tipo}.pdf"'
+    
+    # Crear el lienzo del PDF
+    p = canvas.Canvas(response, pagesize=letter)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(100, 750, f"Reporte de {tipo.capitalize()}")
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 730, f"Periodo: {inicio} al {fin}")
+    
+    y = 700
+    p.setFont("Helvetica", 10)
+
+    # Lógica según el tipo de reporte
+    if tipo == 'ingresos':
+        pagos = Pago.objects.filter(fecha__range=[inicio, fin])
+        p.drawString(100, y, "Fecha | Monto")
+        y -= 20
+        for pago in pagos:
+            p.drawString(100, y, f"{pago.fecha} | ${pago.monto}")
+            y -= 15
+            
+    elif tipo == 'citas':
+        citas = Cita.objects.filter(fecha__range=[inicio, fin])
+        p.drawString(100, y, "Fecha | Servicio | Cliente")
+        y -= 20
+        for cita in citas:
+            cliente_nombre = cita.cliente.usuario.nombre if cita.cliente else "N/A"
+            p.drawString(100, y, f"{cita.fecha} | {cita.servicio.nombre} | {cliente_nombre}")
+            y -= 15
+
+    elif tipo == 'empleados':
+        # Reporte simple de empleados
+        empleados = Empleado.objects.all()
+        p.drawString(100, y, "Nombre | Sucursal")
+        y -= 20
+        for emp in empleados:
+            p.drawString(100, y, f"{emp.usuario.nombre} | {emp.sucursal.nombre}")
+            y -= 15
+
+    p.showPage()
+    p.save()
+    return response
+
+def editar_iva(request):
+    config = Configuracion.objects.first() # Obtenemos el registro único
+    if request.method == 'POST':
+        nuevo_iva = request.POST.get('iva')
+        config.iva = nuevo_iva
+        config.save()
+        return redirect('admin_dashboard')
+    
+    return render(request, 'admin/editar_iva.html', {'config': config})
+
+# En cuentas/views.py
+def actualizar_iva(request):
+    if request.method == 'POST':
+        config = ConfiguracionSistema.objects.first()
+        if config:
+            config.iva_porcentaje = request.POST.get('nuevo_iva')
+            config.save()
+    return redirect('admin_dashboard') # O el nombre de tu vista de dashboard

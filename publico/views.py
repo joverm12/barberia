@@ -7,7 +7,9 @@ from cuentas.models import (Servicio, ServicioComplementario, Sucursal,
                              Postulacion, Cita, Cliente, Empleado, Pack,
                              Usuario, Pago, Factura, ContenidoWeb)
 import json
-
+from django.db import transaction
+from cuentas.models import Cita
+from cuentas.models import ConfiguracionSistema
 # ── INICIO ──────────────────────────────────────────
 def inicio(request):
     servicios_destacados = Servicio.objects.filter(estado='Activo')[:3]
@@ -70,8 +72,8 @@ def agendar_cita(request):
     empleados       = Empleado.objects.filter(estado='Activo').select_related('usuario', 'sucursal')
 
     # IVA configurable — lo guardamos en ContenidoWeb como hack simple
-    iva_obj = ContenidoWeb.objects.filter(seccion='iva').first()
-    iva_porcentaje = float(iva_obj.titulo) if iva_obj and iva_obj.titulo else 15.0
+    config = ConfiguracionSistema.objects.first()
+    iva_porcentaje = float(config.iva_porcentaje) if config else 15.0
 
     return render(request, 'publico/agendar_cita.html', {
         'servicios': servicios,
@@ -137,13 +139,14 @@ def perfil_cliente(request):
     hoy      = timezone.now().date()
     proximas = Cita.objects.filter(
         cliente=cliente, fecha__gte=hoy
-    ).exclude(estado='Cancelada').select_related(
+    ).exclude(estado__in=['Cancelada', 'Finalizada']).select_related(
         'servicio', 'sucursal', 'empleado__usuario'
     ).order_by('fecha', 'hora')
 
     historial = Cita.objects.filter(
         cliente=cliente, estado='Finalizada'
     ).select_related('servicio', 'sucursal').order_by('-fecha')[:10]
+    
 
     # Actualizar sesión con datos actuales
     request.session['nombre']   = usuario.nombre
@@ -299,7 +302,20 @@ def iniciar_atencion(request, id):
 
 def finalizar_servicio(request, id):
     cita = get_object_or_404(Cita, id_cita=id)
-    cita.estado = 'Finalizada'; cita.save()
+    
+    with transaction.atomic():
+        cita.estado = 'Finalizada'
+        cita.save()
+        
+        # Crear registro de pago automáticamente para que aparezca en el Dashboard
+        if not Pago.objects.filter(cita=cita).exists():
+            Pago.objects.create(
+                cita=cita,
+                monto=cita.total, 
+                fecha=timezone.now(),
+                metodo_pago='Efectivo' # Valor por defecto para pruebas
+            )
+            
     return redirect('agenda_empleado')
 
 # ── API: EMPLEADOS POR SUCURSAL (para agendar dinámico) ──

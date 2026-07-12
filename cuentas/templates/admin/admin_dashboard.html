@@ -1,7 +1,4 @@
 
-bash
-
-cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -48,7 +45,7 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
     <input type="text" id="buscar-usuario" placeholder="🔍 Buscar usuario..." onkeyup="filtrarTabla('buscar-usuario','tabla-usuarios')">
     <select onchange="filtrarPorColumna(this.value,'tabla-usuarios',3)">
       <option value="">Todos los Roles</option>
-      <option>Cliente</option><option>Barbero</option><option>Gerente Sucursal</option><option>Administrador</option>
+      <option>Cliente</option><option>Barbero</option><option>Administrador</option>
     </select>
     <button class="btn-añadir" onclick="toggleForm('form-nuevo-usuario')">+ AÑADIR NUEVO USUARIO</button>
   </div>
@@ -88,7 +85,7 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
           <td>
             {% if u.rol == "Cliente" %}<span class="badge badge-cliente">Cliente</span>
             {% elif u.rol == "Barbero" %}<span class="badge badge-barbero">Barbero</span>
-            {% elif u.rol == "Gerente Sucursal" %}<span class="badge badge-gerente">Gerente Sucursal</span>
+            
             {% elif u.rol == "Administrador" %}<span class="badge badge-admin">Administrador</span>
             {% else %}<span class="badge">{{ u.rol }}</span>{% endif %}
           </td>
@@ -343,18 +340,42 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
 
   {{ ingresos_json|json_script:"ingresos-data" }}
   {{ servicios_json|json_script:"servicios-data" }}
-  <div class="reporte-box">
+  <!-- Prueba temporal para ver si Django tiene los datos -->
+<script>
+    // Esto lee el contenido de las etiquetas que ya pusiste arriba
+    
+    const ingresos = JSON.parse(document.getElementById('ingresos-data').textContent);
+    const servicios = JSON.parse(document.getElementById('servicios-data').textContent);
+    
+    console.log("Datos cargados:", ingresos, servicios);
+</script>
+ <div class="reporte-box">
     <h3>Generador de Reportes Especializados</h3>
     <div class="reporte-row">
-      <div><label>Tipo de Reporte</label>
-        <select><option>Reporte de Citas y Reservas</option><option>Reporte de Ingresos</option><option>Reporte de Empleados</option></select></div>
-      <div><label>Fecha Inicio</label><input type="date"></div>
-      <div><label>Fecha Fin</label><input type="date"></div>
-      <button class="btn-primary" style="align-self:flex-end">GENERAR</button>
-      <button class="btn-sistema" style="align-self:flex-end">📄 PDF</button>
+      <div>
+        <label>Tipo de Reporte</label>
+        <select id="tipo-reporte">
+            <option value="citas">Reporte de Citas y Reservas</option>
+            <option value="ingresos">Reporte de Ingresos</option>
+            <option value="empleados">Reporte de Empleados</option>
+        </select>
+      </div>
+      <div>
+        <label>Fecha Inicio</label>
+        <input type="date" id="fecha-inicio">
+      </div>
+      <div>
+        <label>Fecha Fin</label>
+        <input type="date" id="fecha-fin">
+      </div>
+      
+      <!-- ID para capturar el clic en Generar -->
+      <button id="btn-generar" class="btn-primary" style="align-self:flex-end" type="button">GENERAR</button>
+      
+      <!-- Convertimos el PDF a un enlace <a> con ID para la descarga -->
+      <a id="btn-pdf" href="#" class="btn-sistema" style="align-self:flex-end; text-decoration: none;">📄 PDF</a>
     </div>
-  </div>
-
+</div>
   <!-- CITAS -->
   <div class="title-box" style="margin-top:32px"><h1>Citas</h1><p>Gestión de Citas</p></div>
   <div class="search-box">
@@ -444,69 +465,10 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
     </table>
   </div>
 
-  <div class="simulador-box">
-    <h3>📅 Simulador: Flujo de Agendamiento Interno</h3>
-    <div class="simulador-steps">
-      <div><div class="step-label">1. Sucursal</div>
-        <select class="pv-select">{% for s in sucursales %}<option>{{ s.nombre }}</option>{% endfor %}</select></div>
-      <div><div class="step-label">2. Servicio Principal</div>
-        <select class="pv-select">{% for sv in servicios %}<option>{{ sv.nombre }}</option>{% endfor %}</select></div>
-      <div><div class="step-label">3. Profesional</div>
-        <select class="pv-select"><option>Cualquiera disponible</option>{% for e in empleados %}<option>{{ e.usuario.nombre }}</option>{% endfor %}</select></div>
-      <div><div class="step-label">4. Fecha y Hora</div>
-        <div style="display:flex;gap:6px">
-          <input type="date" style="flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--gold-border);background:var(--bg-darker);color:var(--cream)">
-          <input type="time" style="width:90px;padding:9px;border-radius:var(--radius);border:1px solid var(--gold-border);background:var(--bg-darker);color:var(--cream)">
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- PAGOS -->
-  <div class="title-box" style="margin-top:32px"><h1>Pagos y Caja</h1><p>Gestión de Facturas de Venta</p></div>
-  <div class="pagos-layout">
-    <div class="punto-venta">
-      <h3>Punto de Venta</h3>
-      <div style="margin-bottom:12px">
-        <label style="font-size:.78rem;color:var(--cream-dim);display:block;margin-bottom:4px">Seleccionar Cita Pendiente</label>
-        <select class="pv-select" id="pv-cita-select" onchange="cargarDatosCita(this)">
-          <option value="">Seleccionar cita...</option>
-          {% for c in citas %}{% if c.estado == "Pendiente" %}
-          <option value="{{ c.id_cita }}" data-total="{{ c.total }}" data-servicio="{{ c.servicio.nombre|default:'—' }}">
-            CT-{{ c.id_cita|stringformat:"03d" }} — {{ c.cliente.usuario.nombre }} {{ c.cliente.usuario.apellido }}
-          </option>
-          {% endif %}{% endfor %}
-        </select>
-      </div>
-      <div class="linea-item"><span id="pv-servicio">Servicio</span><span id="pv-precio">$0.00</span></div>
-      <div class="total-line"><span>TOTAL:</span><span id="pv-total">$0.00</span></div>
-      <div style="margin-top:14px">
-        <label style="font-size:.78rem;color:var(--cream-dim);display:block;margin-bottom:4px">Método de Pago</label>
-        <select class="pv-select" id="pv-metodo"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
-      </div>
-      <form method="post" action="{% url 'registrar_pago' %}" id="form-cobro-pv">
-        {% csrf_token %}
-        <input type="hidden" name="cita_id" id="pv-cita-id" value="">
-        <input type="hidden" name="metodo_pago" id="pv-metodo-hidden" value="Efectivo">
-        <button type="submit" class="btn-primary" style="width:100%;margin-top:18px;padding:13px"
-          onclick="document.getElementById('pv-metodo-hidden').value=document.getElementById('pv-metodo').value">
-          💳 REGISTRAR PAGO Y FACTURAR
-        </button>
-      </form>
-    </div>
-    <div class="ultimas-facturas">
-      <div class="uf-header"><h3>Últimas Facturas</h3><button class="btn-cierre">Cierre de Caja Diario</button></div>
-      <table class="plantillas-table">
-        <thead><tr><th>FACTURA #</th><th>MONTO</th><th>MÉTODO</th><th>PDF</th></tr></thead>
-        <tbody>
-          {% for f in facturas %}<tr><td>{{ f.numero }}</td><td>${{ f.total }}</td><td>{{ f.pago.metodo_pago }}</td><td><button class="icon-btn">📄</button></td></tr>
-          {% empty %}<tr><td colspan="4" class="empty-msg">Sin facturas aún.</td></tr>{% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div><!-- /operaciones -->
-
+  <!-- /operaones -->
+<!-- /catalogo -->
+</div>
 <!-- ═══════════════════ CATÁLOGO ═══════════════════ -->
 <div id="seccion-catalogo" class="modulo-seccion oculto">
   <div class="title-box"><h1>Catálogo</h1><p>Gestión del Catálogo</p></div>
@@ -663,157 +625,20 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
 
 <!-- ═══════════════════ MARKETING ═══════════════════ -->
 <div id="seccion-marketing" class="modulo-seccion oculto">
-  <div class="title-box"><h1>Marketing y Web</h1><p>Contenido Web, Reseñas, RRHH y Notificaciones</p></div>
+  <div class="title-box"><h1>Marketing y Web</h1><p>RRHH y Notificaciones</p></div>
 
-  <div class="mkt-tabs">
-    <button class="mkt-tab active" onclick="mktTab(this,'mkt-inicio')">Página Inicio</button>
-    <button class="mkt-tab" onclick="mktTab(this,'mkt-nosotros')">Nosotros / Historia</button>
-    <button class="mkt-tab" onclick="mktTab(this,'mkt-valores')">Valores</button>
-    <button class="mkt-tab" onclick="mktTab(this,'mkt-galeria')">Galería Web</button>
-    <button class="mkt-tab" onclick="mktTab(this,'mkt-faq')">FAQ</button>
-  </div>
-
-  <!-- TAB INICIO -->
-  <div id="mkt-inicio" class="mkt-panel">
-    <div class="mkt-layout">
-      <div class="form-card">
-        <h3>Editor de Hero Banner (Inicio)</h3>
-        <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
-          {% csrf_token %}<input type="hidden" name="seccion" value="inicio">
-          <div class="form-group" style="margin-bottom:14px">
-            <label>Título Principal (H1)</label>
-            <input type="text" name="titulo" value="{{ contenido_inicio.titulo|default:'' }}" placeholder="Elegancia y precisión en cada detalle">
-          </div>
-          <div class="form-group" style="margin-bottom:14px">
-            <label>Subtítulo / Descripción</label>
-            <textarea name="subtitulo" rows="4" placeholder="Descripción...">{{ contenido_inicio.subtitulo|default:'' }}</textarea>
-          </div>
-          <div class="form-group" style="margin-bottom:16px">
-            <label>Imagen de Fondo / Modelo</label>
-            <div class="file-input-row">
-              <label class="file-label" for="img-hero">Seleccionar archivo</label>
-              <span class="file-name" id="img-hero-name">Sin archivos seleccionados</span>
-              <input type="file" id="img-hero" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-hero-name')">
-            </div>
-            {% if contenido_inicio.imagen %}<div style="margin-top:8px"><img src="{{ contenido_inicio.imagen.url }}" style="max-width:200px;border-radius:8px;border:1px solid var(--gold-border)"></div>{% endif %}
-          </div>
-          <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
-        </form>
-      </div>
-      <div class="form-card">
-        <h3>Moderación de Reseñas de Clientes</h3>
-        {% for r in resenas %}
-        <div class="resena-card">
-          <div class="resena-header">
-            <div>
-              <div class="resena-cliente">{{ r.cliente.usuario.nombre }} {{ r.cliente.usuario.apellido|slice:":1" }}.</div>
-              <div class="resena-stars">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% else %}☆{% endif %}{% endfor %}</div>
-            </div>
-            <span class="resena-tipo {% if r.calificacion >= 4 %}tipo-positivo{% else %}tipo-negativo{% endif %}">
-              {% if r.calificacion >= 4 %}POSITIVO{% else %}QUEJA / NEGATIVO{% endif %}
-            </span>
-          </div>
-          <div class="resena-texto">"{{ r.comentario }}"</div>
-          <div class="resena-acciones">
-            {% if r.estado == "Pendiente" %}
-            <form method="post" action="{% url 'aprobar_resena' r.id_resena %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-aprobar">✓ Aprobar</button></form>
-            <form method="post" action="{% url 'rechazar_resena' r.id_resena %}" style="display:inline">{% csrf_token %}<button type="submit" class="btn-rechazar">✗ Rechazar</button></form>
-            {% else %}<span class="estado-pill {% if r.estado == 'Aprobado' %}estado-activo{% else %}estado-inactivo{% endif %}">{{ r.estado }}</span>{% endif %}
-          </div>
-        </div>
-        {% empty %}<p class="empty-msg">No hay reseñas pendientes.</p>{% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB NOSOTROS -->
-  <div id="mkt-nosotros" class="mkt-panel oculto">
-    <div class="form-card" style="max-width:700px">
-      <h3>Editor — Nosotros / Historia</h3>
-      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
-        {% csrf_token %}<input type="hidden" name="seccion" value="nosotros">
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Título de Sección</label>
-          <input type="text" name="titulo" placeholder="Ej. Sobre Nosotros">
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Historia / Descripción</label>
-          <textarea name="subtitulo" rows="6" placeholder="Cuéntanos la historia de Barber House..."></textarea>
-        </div>
-        <div class="form-group" style="margin-bottom:16px">
-          <label>Imagen Principal</label>
-          <div class="file-input-row">
-            <label class="file-label" for="img-nosotros">Seleccionar archivo</label>
-            <span class="file-name" id="img-nosotros-name">Sin archivos seleccionados</span>
-            <input type="file" id="img-nosotros" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-nosotros-name')">
-          </div>
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- TAB VALORES -->
-  <div id="mkt-valores" class="mkt-panel oculto">
-    <div class="form-card" style="max-width:700px">
-      <h3>Editor — Valores de la Empresa</h3>
-      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
-        {% csrf_token %}<input type="hidden" name="seccion" value="valores">
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Misión</label>
-          <textarea name="titulo" rows="3" placeholder="Ofrecer servicios de barbería y cuidado capilar de alta calidad..."></textarea>
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Visión</label>
-          <textarea name="subtitulo" rows="3" placeholder="Ser una barbería referente por nuestra excelencia..."></textarea>
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 PUBLICAR CAMBIOS</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- TAB GALERÍA -->
-  <div id="mkt-galeria" class="mkt-panel oculto">
-    <div class="form-card">
-      <h3>Galería Web — Subir Imágenes</h3>
-      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
-        {% csrf_token %}<input type="hidden" name="seccion" value="galeria">
-        <div class="form-group" style="margin-bottom:16px">
-          <label>Subir imagen a la galería</label>
-          <div class="file-input-row">
-            <label class="file-label" for="img-galeria">Seleccionar archivo</label>
-            <span class="file-name" id="img-galeria-name">Sin archivos seleccionados</span>
-            <input type="file" id="img-galeria" name="imagen" accept="image/*" onchange="mostrarNombreArchivo(this,'img-galeria-name')">
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Descripción / Alt text</label>
-          <input type="text" name="titulo" placeholder="Ej. Corte clásico masculino en sucursal Norte">
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%;padding:13px">📤 SUBIR IMAGEN</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- TAB FAQ -->
-  <div id="mkt-faq" class="mkt-panel oculto">
-    <div class="form-card" style="max-width:700px">
-      <h3>Editor — Preguntas Frecuentes (FAQ)</h3>
-      <form method="post" action="{% url 'guardar_contenido' %}" enctype="multipart/form-data">
-        {% csrf_token %}<input type="hidden" name="seccion" value="faq">
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Pregunta</label>
-          <input type="text" name="titulo" placeholder="Ej. ¿Debo reservar con anticipación?">
-        </div>
-        <div class="form-group" style="margin-bottom:14px">
-          <label>Respuesta</label>
-          <textarea name="subtitulo" rows="4" placeholder="Respuesta a la pregunta..."></textarea>
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%;padding:13px">➕ AÑADIR FAQ</button>
-      </form>
-    </div>
-  </div>
-
+  <!-- Sección Marketing y Web -->
+<div class="marketing-box">
+    <h3>Configuración de Impuestos</h3>
+    <p>IVA Actual: <strong>{{ config.iva_porcentaje }}%</strong></p>
+    
+    <form action="{% url 'actualizar_iva' %}" method="POST">
+        {% csrf_token %}
+        <input type="number" step="0.01" name="nuevo_iva" value="{{ config.iva_porcentaje }}">
+        <button type="submit" class="btn-primary">Actualizar IVA</button>
+    </form>
+</div>
+<div></div>
   <!-- RRHH -->
   <div class="title-box" style="margin-top:28px"><h1>RRHH (Vacantes)</h1><p>Gestión de Vacantes</p></div>
   <div class="search-box">
@@ -984,7 +809,93 @@ cat > /mnt/user-data/outputs/admin_dashboard_final.html << 'HEREDOC'
 </div><!-- /sistema -->
 
 </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ingresosElement = document.getElementById('ingresos-data');
+    const serviciosElement = document.getElementById('servicios-data');
 
+    if (ingresosElement && serviciosElement) {
+        // Obtenemos el texto y nos aseguramos de que sea un objeto de JS
+        let ingresos = JSON.parse(ingresosElement.textContent);
+        let servicios = JSON.parse(serviciosElement.textContent);
+
+        console.log("Datos cargados:", ingresos, servicios);
+
+        // --- CORRECCIÓN CRÍTICA ---
+        // Si el resultado de JSON.parse es un objeto, lo convertimos a array.
+        // Si llega como string, lo parseamos de nuevo (por si acaso).
+        if (typeof ingresos === 'string') ingresos = JSON.parse(ingresos);
+        const ingresosArray = Array.isArray(ingresos) ? ingresos : Object.values(ingresos);
+        
+        if (typeof servicios === 'string') servicios = JSON.parse(servicios);
+        const serviciosArray = Array.isArray(servicios) ? servicios : Object.values(servicios);
+
+        // Destruir gráficos previos
+        Chart.getChart("barChart")?.destroy();
+        Chart.getChart("pieChart")?.destroy();
+
+        // Gráfico de Barras
+        if (ingresosArray.length > 0) {
+            new Chart(document.getElementById('barChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ingresosArray.map(i => i.mes),
+                    datasets: [{ label: 'Ingresos ($)', data: ingresosArray.map(i => i.total), backgroundColor: '#A52A2A' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // Gráfico de Pastel
+        if (serviciosArray.length > 0) {
+            new Chart(document.getElementById('pieChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: serviciosArray.map(s => s.nombre),
+                    datasets: [{
+                        data: serviciosArray.map(s => s.cantidad),
+                        backgroundColor: ['#D2691E', '#8B4513', '#A0522D', '#CD853F', '#DEB887']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const btnGenerar = document.getElementById('btn-generar');
+    const btnPdf = document.getElementById('btn-pdf');
+    const tipo = document.getElementById('tipo-reporte');
+    const inicio = document.getElementById('fecha-inicio');
+    const fin = document.getElementById('fecha-fin');
+
+    // Acción para GENERAR (petición a Django)
+    btnGenerar.addEventListener('click', function() {
+        if(!inicio.value || !fin.value) return alert("Selecciona fechas");
+        
+        fetch(`/panel/reportes/generar/?tipo=${tipo.value}&inicio=${inicio.value}&fin=${fin.value}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log("Datos recibidos:", data);
+                alert("Reporte listo en consola");
+            });
+    });
+
+    // Acción para PDF: Construye la URL para descargar
+    btnPdf.addEventListener('click', function(e) {
+        if(!inicio.value || !fin.value) {
+            e.preventDefault();
+            alert("Selecciona fechas primero");
+            return;
+        }
+        // Redirigimos a una vista que genere el PDF
+        this.href = `/panel/reportes/pdf/?tipo=${tipo.value}&inicio=${inicio.value}&fin=${fin.value}`;
+    });
+});
+</script>
 <script>
 // ══════════════════════════════════════════════
 // URL_BASE — AJUSTA el prefijo a tu config/urls.py
@@ -1328,7 +1239,7 @@ if (document.getElementById('ingresos-data') && document.getElementById('servici
             }
         }
     });
-
+    
     // Gráfico Circular
     new Chart(document.getElementById('pieChart'), {
         type: 'pie',

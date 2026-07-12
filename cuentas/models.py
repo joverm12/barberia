@@ -184,3 +184,11 @@ class ServicioComplementario(models.Model):
 
     def __str__(self):
         return f"{self.nombre} (+${self.precio})"
+
+from django.db import models
+
+class ConfiguracionSistema(models.Model):
+    iva_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=15.00)
+    
+    def __str__(self):
+        return f"IVA: {self.iva_porcentaje}%"

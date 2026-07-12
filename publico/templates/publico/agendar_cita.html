@@ -153,34 +153,63 @@
 <script>
 
 
-const IVA = JSON.parse(document.getElementById('iva-data').textContent);
 
-function calcularTotal() {
-  let subtotal = 0, duracion = 0;
-  const svSel = document.getElementById('ag-servicio');
-  const svOpt = svSel.options[svSel.selectedIndex];
-  if (svOpt && svOpt.dataset.precio) {
-    subtotal += parseFloat(svOpt.dataset.precio);
-    duracion += parseInt(svOpt.dataset.dur || 0);
-    document.getElementById('res-servicio').textContent = svOpt.text.split('(')[0].trim();
-  } else {
-    document.getElementById('res-servicio').textContent = '—';
-  }
-  const comps = [];
-  document.querySelectorAll('input[name="complementarios"]:checked').forEach(cb => {
-    subtotal += parseFloat(cb.dataset.precio || 0);
-    duracion += parseInt(cb.dataset.dur || 0);
-    comps.push(cb.closest('label').textContent.trim().split('(')[0].trim());
-  });
-  document.getElementById('res-comps').textContent    = comps.length ? comps.join(', ') : '—';
-  document.getElementById('res-duracion').textContent = duracion ? duracion + ' min' : '—';
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Obtener IVA de forma segura
+    const ivaElement = document.getElementById('iva-data');
+    const IVA = ivaElement ? JSON.parse(ivaElement.textContent) : 15.0;
 
-  const iva   = subtotal * IVA / 100;
-  const total = subtotal + iva;
-  document.getElementById('res-subtotal').textContent = '$' + subtotal.toFixed(2);
-  document.getElementById('res-iva').textContent      = '$' + iva.toFixed(2);
-  document.getElementById('res-total').textContent    = '$' + total.toFixed(2);
-}
+    function calcularTotal() {
+        let subtotal = 0, duracion = 0;
+        
+        // Servicio Principal
+        const svSel = document.getElementById('ag-servicio');
+        const svOpt = svSel.options[svSel.selectedIndex];
+        
+        if (svOpt && svOpt.dataset.precio) {
+            subtotal += parseFloat(svOpt.dataset.precio);
+            duracion += parseInt(svOpt.dataset.dur || 0);
+            document.getElementById('res-servicio').textContent = svOpt.text.split('(')[0].trim();
+        } else {
+            document.getElementById('res-servicio').textContent = '—';
+        }
+
+        // Servicios Complementarios
+        const comps = [];
+        document.querySelectorAll('input[name="complementarios"]:checked').forEach(cb => {
+            subtotal += parseFloat(cb.dataset.precio || 0);
+            duracion += parseInt(cb.dataset.dur || 0);
+            comps.push(cb.closest('label').textContent.trim().split('(')[0].trim());
+        });
+
+        document.getElementById('res-comps').textContent = comps.length ? comps.join(', ') : '—';
+        document.getElementById('res-duracion').textContent = duracion ? duracion + ' min' : '—';
+
+        // Cálculos con IVA dinámico
+        const iva = subtotal * IVA / 100;
+        const total = subtotal + iva;
+
+        // Actualización de UI
+        document.getElementById('res-subtotal').textContent = '$' + subtotal.toFixed(2);
+        
+        // Actualizamos el label del IVA para reflejar el % actual
+        const ivaLabel = document.querySelector('[data-id="iva-label"]');
+        if (ivaLabel) ivaLabel.textContent = `IVA (${IVA}%):`;
+        
+        document.getElementById('res-iva').textContent = '$' + iva.toFixed(2);
+        document.getElementById('res-total').textContent = '$' + total.toFixed(2);
+    }
+
+    // 2. Escuchar cambios automáticamente
+    document.getElementById('ag-servicio').addEventListener('change', calcularTotal);
+    document.querySelectorAll('input[name="complementarios"]').forEach(el => {
+        el.addEventListener('change', calcularTotal);
+    });
+
+    // Calcular al cargar la página por si hay valores preseleccionados
+    calcularTotal();
+});
+
 
 function actualizarResumen() {
   calcularTotal();

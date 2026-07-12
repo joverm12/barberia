@@ -1,0 +1,6 @@
+django
+gunicorn
+cloudinary
+django-cloudinary-storage
+whitenoise
+psycopg2-binary

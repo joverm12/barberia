@@ -36,4 +36,8 @@ urlpatterns = [
     path('panel/contenido/guardar/', views.guardar_contenido, name='guardar_contenido'),
     path('panel/notificacion/enviar/', views.enviar_notificacion, name='enviar_notificacion'),
     path('admin/reporte/pdf/', views.exportar_reporte_pdf, name='exportar_reporte_pdf'),
+    path('panel/reportes/generar/', views.generar_reporte, name='generar_reporte'),
+    path('panel/reportes/pdf/', views.descargar_pdf, name='descargar_pdf'),
+    path('panel/actualizar-iva/', views.actualizar_iva, name='actualizar_iva'),
+
 ]

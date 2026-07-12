@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary_storage', 
-    'cloudinary',
+    'cloudinary_storage',
+    'cloudinary', # Eliminé el duplicado de aquí
+    
     'cuentas',
     'publico',
 ]
@@ -136,6 +140,10 @@ CLOUDINARY_STORAGE = {
     'API_KEY': '945383893211668',
     'API_SECRET': 'jKPUVFiNtu_tC-p58KrjqwkhKQ8'
 }
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Configuración de archivos multimedia (imágenes, CVs, etc.)
 import os
 MEDIA_URL = '/media/'
