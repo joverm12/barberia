@@ -156,7 +156,7 @@ a    { color: inherit; text-decoration: none; }
 /* ── PÁGINA SERVICIOS ── */
 .page-hero {
   background: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.95)),
-              url('../images/hero-bg.jpg') center/cover;
+              url('../images/hero_bg.jpg') center/cover;
   padding: 60px 60px 40px;
 }
 .page-hero h1 { font-family: 'Brush Script MT', cursive; font-size: 2.5rem; color: var(--gold); margin-bottom: 6px; }
@@ -505,3 +505,34 @@ a    { color: inherit; text-decoration: none; }
   .agendar-modal { grid-template-columns: 1fr; }
   .agendar-resumen { border-left: none; border-top: 1px solid rgba(100,0,30,.15); }
 }
+.hero-section {
+    width: 100%;
+    height: 60vh;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    /* Aplicamos el gradiente oscuro para que el texto resalte */
+    background-image: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.95));
+}
+
+/* Hero Base: Estilos comunes */
+.page-hero {
+    position: relative;
+    padding: 100px 60px;
+    text-align: center;
+    color: white;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Clases específicas para cada imagen de fondo */
+.hero-inicio { background-image: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.8)), url('../images/hero_bg.jpg'); }
+.hero-servicios { background-image: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.8)), url('../images/barba.jpg'); }
+.hero-sucursales { background-image: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.8)), url('../images/mascarilla.jpg'); }
+.hero-trabaja { background-image: linear-gradient(rgba(50,5,15,.8), rgba(50,5,15,.8)), url('../images/sobre-nosotros.jpg'); }

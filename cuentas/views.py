@@ -8,6 +8,8 @@ from reportlab.pdfgen import canvas
 from django.db.models import Sum, Count
 from django.db.models import Sum
 from django.db import transaction
+from django.db import IntegrityError
+from django.shortcuts import render, redirect
 import json
 from .models import ConfiguracionSistema
 from .models import (ServicioComplementario, Usuario, Empleado, Sucursal, Servicio, Pack, Cita,
@@ -560,7 +562,8 @@ def descargar_pdf(request):
     return response
 
 def editar_iva(request):
-    config = Configuracion.objects.first() # Obtenemos el registro único
+    # Usar el modelo correcto para la configuración del sistema
+    config = ConfiguracionSistema.objects.first()  # Obtenemos el registro único
     if request.method == 'POST':
         nuevo_iva = request.POST.get('iva')
         config.iva = nuevo_iva
@@ -577,3 +580,27 @@ def actualizar_iva(request):
             config.iva_porcentaje = request.POST.get('nuevo_iva')
             config.save()
     return redirect('admin_dashboard') # O el nombre de tu vista de dashboard
+
+def registrar_cliente(request):
+    if request.method == 'POST':
+        try:
+            # Intentar crear el usuario
+            nuevo_usuario = Usuario.objects.create(
+                nombre=request.POST.get('nombre'),
+                apellido=request.POST.get('apellido'),
+                correo=request.POST.get('correo'),
+                contrasenia=request.POST.get('contrasenia'),
+                telefono=request.POST.get('telefono'),
+                cedula=request.POST.get('cedula'),
+                rol='Cliente'
+            )
+            Cliente.objects.create(usuario=nuevo_usuario)
+            return redirect('login')
+            
+        except IntegrityError:
+            # Si falla, mostrar un mensaje de error al usuario en lugar de colapsar
+            return render(request, 'publico/registro.html', {
+                'error': 'Este correo ya está registrado. Por favor, intenta con otro.'
+            })
+            
+    return render(request, 'publico/registro.html')

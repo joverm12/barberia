@@ -5,6 +5,22 @@
     <meta charset="UTF-8">
     <title>Iniciar Sesión - The Barber House</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        /* Estilos adicionales para el enlace de registro */
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        .register-link a {
+            color: #c5a059; /* Ajusta este color a tu variable --gold si la tienes */
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .register-link a:hover { 
+            text-decoration: underline; 
+        }
+    </style>
 </head>
 <body>
 
@@ -22,11 +38,14 @@
             <input type="email" name="correo" placeholder="Correo electrónico" required>
             <input type="password" name="contrasenia" placeholder="Contraseña*" required>
             
-            <div class="form-options">
-                <a href="#">¿Olvidaste tu contraseña?</a>
-            </div>
+
             
             <button type="submit">INGRESAR</button>
+            
+            <!-- Botón de Registro añadido -->
+            <div class="register-link">
+                <p>¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate como Cliente</a></p>
+            </div>
             
             {% if error %}
                 <p class="error-message">{{ error }}</p>

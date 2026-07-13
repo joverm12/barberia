@@ -39,5 +39,6 @@ urlpatterns = [
     path('panel/reportes/generar/', views.generar_reporte, name='generar_reporte'),
     path('panel/reportes/pdf/', views.descargar_pdf, name='descargar_pdf'),
     path('panel/actualizar-iva/', views.actualizar_iva, name='actualizar_iva'),
+    path('registro/', views.registrar_cliente, name='registro'),
 
 ]

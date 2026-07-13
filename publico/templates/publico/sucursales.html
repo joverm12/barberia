@@ -1,12 +1,15 @@
 {% extends 'publico/base_publico.html' %}
+{% load static %}  {# <--- ESTA LÍNEA ES LA QUE FALTA #}
+
 {% block title %}Sucursales — Barber House{% endblock %}
 {% block nav_sucursales %}active{% endblock %}
 
 {% block content %}
-<div class="page-hero">
-  <h1>Nuestras Sucursales</h1>
-  <p>Encuéntranos en tu ciudad.</p>
-</div>
+
+<section class="page-hero" style="background-image: linear-gradient(rgba(50,5,15, 0.4), rgba(50,5,15, 0.4)), url('{% static 'images/mascarilla.jpg' %}'); background-size: cover; background-position: center; padding: 180px 60px; text-align: center; color: white;">
+    <h1>Nuestras Sucursales</h1>
+    <p>Encuéntranos en tu ciudad. Atención personalizada en cada ubicación.</p>
+</section>
 
 <div class="section">
   <div class="sucursales-pub-grid" style="padding:0">

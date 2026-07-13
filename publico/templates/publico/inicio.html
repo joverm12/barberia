@@ -6,15 +6,10 @@
 {% block content %}
 
 <!-- HERO PRINCIPAL -->
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-content">
-    <h1>TU ESTILO,<br>NUESTRA PASIÓN</h1>
-    <p class="hero-sub">Experiencia · Precisión · Excelencia</p>
-    <a href="{% url 'agendar_cita' %}" class="btn-hero">AGENDAR CITA</a>
-  </div>
+<section class="page-hero" style="background-image: linear-gradient(rgba(50,5,15, 0.4), rgba(50,5,15, 0.4)), url('{% static 'images/hero_bg.jpg' %}'); background-size: cover; background-position: center; padding: 180px 60px; text-align: center; color: white;">
+    <h1>TU ESTILO, NUESTRA PASIÓN</h1>
+    <p>Experiencia • Precisión • Excelencia</p>
 </section>
-
 <!-- SOBRE NOSOTROS -->
 <section class="section" style="background:rgba(50,5,15,0.6)">
   <div class="sobre-grid">
